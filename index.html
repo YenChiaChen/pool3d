@@ -1232,7 +1232,7 @@ addEventListener('keyup', e => { keys[e.code] = false; });
 const canPlace = () => state === 'aim' && (game.ballInHand || game.breakShot) && !notMine();
 function moveCue(mx, my) {
   let wx, wz;
-  if (topView) { wx = mx * 0.0028; wz = my * 0.0028; }
+  if (topView) { const pt = camera.aspect < 1; wx = (pt ? my : mx) * 0.0028; wz = (pt ? -mx : my) * 0.0028; } // 直式畫面的俯視轉了 90°
   else { const dx = Math.cos(yaw), dz = Math.sin(yaw), f = -my * 0.002, r = mx * 0.002; wx = dx * f - dz * r; wz = dz * f + dx * r; }
   const nx = clamp(cueBall.x + wx, -L + R, game.breakShot ? -L / 2 : L - R), nz = clamp(cueBall.z + wz, -W + R, W - R);
   if (!overlaps(nx, nz, cueBall)) { cueBall.x = nx; cueBall.z = nz; send({ t: 'aim', y: yaw, x: cueBall.x, z: cueBall.z }); }
@@ -1780,7 +1780,7 @@ function frame(_, fixedDt) {
   if (state === 'replay') {
     const a = 0.6 + replay.t * 0.25;
     camPos.set(Math.cos(a) * 2.4, 1.5, Math.sin(a) * 1.6); camTarget.set(0, 0, 0);
-  } else if (topView) { camPos.set(0, 3.0, 0.001); camTarget.set(0, 0, 0); }
+  } else if (topView) { const pt = camera.aspect < 1, h = Math.max(3, 0.85 / (Math.tan(FOV * Math.PI / 360) * Math.min(1, camera.aspect))); camPos.set(pt ? 0.001 : 0, h, pt ? 0 : 0.001); camTarget.set(0, 0, 0); } // 直式畫面：球台長邊轉成直的
   else if (aiming) {
     camPos.set(cueBall.x - dx * dist * Math.cos(pitch), R + dist * Math.sin(pitch), cueBall.z - dz * dist * Math.cos(pitch));
     camTarget.set(cueBall.x + dx * 0.4, R, cueBall.z + dz * 0.4);
