@@ -6,7 +6,9 @@ First-person 3D American pool that runs in the browser. Nothing to install.
 
 **▶ Play now: https://yenchiachen.github.io/pool3d/**
 
-![Gameplay](docs/screenshot.jpg)
+![Gameplay: 9-ball break, aim line, spin shots, and the phone version](docs/demo-en.gif)
+
+▶ [Full-quality video (MP4, 29 s)](https://yenchiachen.github.io/pool3d/docs/demo-en.mp4)
 
 ## Features
 

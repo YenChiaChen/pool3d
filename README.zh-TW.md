@@ -6,7 +6,9 @@
 
 **▶ 立即遊玩：https://yenchiachen.github.io/pool3d/**
 
-![遊戲畫面](docs/screenshot.jpg)
+![遊戲畫面：9 號球開球、瞄準線、加塞走位、手機版](docs/demo-zh.gif)
+
+▶ [完整高畫質影片（MP4，29 秒）](https://yenchiachen.github.io/pool3d/docs/demo-zh.mp4)
 
 ## 玩法
 
