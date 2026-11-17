@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D 美式撞球</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,"PingFang TC",sans-serif;color:#fff}
+#hud{position:fixed;top:12px;left:14px;font-size:14px;line-height:1.5;text-shadow:0 1px 3px #000;pointer-events:none;display:grid;gap:5px}
+#hud .mode{font-size:12px;opacity:.7}
+#hud .row{display:flex;align-items:center;gap:4px;padding:3px 8px 3px 4px;border-radius:8px;background:#0006}
+#hud .row.cur{background:#1f5a3acc;box-shadow:0 0 0 1px #6fd39a88}
+#hud .name{min-width:74px;font-weight:600}
+#hud .grp{font-size:12px;opacity:.75;margin-right:4px}
+.chip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;box-shadow:inset -2px -2px 3px #0006;flex:none}
+.chip b{width:10px;height:10px;border-radius:50%;background:#f4efe0;color:#111;font-size:7px;line-height:10px;text-align:center;font-weight:700}
+.chip.off{opacity:.2;filter:grayscale(1)}
+.chip.target{outline:2px solid #ffe066;outline-offset:1px}
+#msg{position:fixed;top:38%;width:100%;text-align:center;font-size:30px;font-weight:600;text-shadow:0 2px 8px #000;pointer-events:none;transition:opacity .4s}
+#toast{position:fixed;top:30%;width:100%;text-align:center;font-size:20px;font-weight:600;color:#ffe9a8;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s}
+#toast.on{opacity:1;transform:translateY(-8px)}
+#power{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);width:320px;height:10px;border:1px solid #fff8;border-radius:6px;overflow:hidden}
+#power div{height:100%;width:0;background:linear-gradient(90deg,#4c4,#ec3,#e33)}
+#power i{position:absolute;top:-1px;bottom:-1px;width:2px;margin-left:-1px;background:#fff;opacity:0;box-shadow:0 0 4px #fff}
+#power.max{box-shadow:0 0 12px #f44;border-color:#f66;animation:shake .07s linear infinite}
+@keyframes shake{0%{transform:translate(calc(-50% - 2px),0)}50%{transform:translate(calc(-50% + 2px),-1px)}100%{transform:translate(calc(-50% - 1px),1px)}}
+#tip{position:fixed;right:22px;bottom:22px;width:76px;height:76px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#d8d2c2);box-shadow:0 2px 10px #000a;pointer-events:none}
+#tip b{position:absolute;top:-22px;width:120px;left:-22px;text-align:center;font-size:12px;font-weight:500;text-shadow:0 1px 2px #000}
+#tip i{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#d11;left:50%;top:50%}
+#hint{position:fixed;bottom:44px;left:110px;right:110px;text-align:center;font-size:13px;opacity:.85;pointer-events:none;text-shadow:0 1px 3px #000}
+.panel{background:#15110ddd;border:1px solid #ffffff22;border-radius:14px;padding:22px 26px;box-shadow:0 20px 60px #000c}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px;align-items:baseline}
+.keys kbd{font:600 12px system-ui,sans-serif;background:#ffffff14;border:1px solid #ffffff2a;border-radius:5px;padding:1px 6px;white-space:nowrap;justify-self:end}
+#helpPanel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);display:none;pointer-events:none}
+#helpPanel.on{display:block}
+#menu{z-index:10;position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#0008;backdrop-filter:blur(6px);padding:16px}
+#menu.on{display:flex}
+#menu .panel{width:min(600px,100%);max-height:100%;overflow:auto;box-sizing:border-box}
+#menu h1{margin:0 0 4px;font-size:26px;letter-spacing:.04em}
+#menu .sub{opacity:.6;font-size:13px;margin-bottom:18px}
+#menu h2{font-size:13px;opacity:.6;font-weight:600;margin:18px 0 8px}
+#modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#menu button{font:600 14px system-ui,"PingFang TC",sans-serif;color:#fff;background:#1f5a3a;border:1px solid #6fd39a55;border-radius:9px;padding:11px 8px;cursor:pointer}
+#menu button:hover{background:#2a7a4f}
+#menu button.cur{box-shadow:0 0 0 2px #ffe066}
+#online{display:grid;grid-template-columns:1fr 1fr 90px auto;gap:8px}
+#room{font:600 15px system-ui,sans-serif;text-transform:uppercase;text-align:center;color:#fff;background:#0006;border:1px solid #6fd39a55;border-radius:9px;min-width:0}
+#netMsg{word-break:break-all;user-select:text}
+#resume{width:100%;margin-top:10px;background:#7a5a1c!important;border-color:#e6b65555!important}
+#menu label{display:flex;align-items:center;gap:12px;font-size:14px;margin:6px 0}
+#menu label span{min-width:90px}
+#menu input[type=range]{flex:1;accent-color:#6fd39a}
+#menu .keys{grid-template-columns:auto 1fr auto 1fr}
+#helpPanel{z-index:5}
+@media (max-width:520px){#modes,#online{grid-template-columns:repeat(2,1fr)}#menu .keys{grid-template-columns:auto 1fr}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="hud"></div>
+<div id="msg"></div>
+<div id="toast"></div>
+<div id="hint"></div>
+<div id="helpPanel" class="panel"><div class="keys"></div></div>
+<div id="menu" class="on"><div class="panel">
+  <h1>3D 美式撞球</h1><div class="sub">選一個模式開始。遊戲中按 Esc 回到這裡。</div>
+  <div id="modes"></div>
+  <h2>連線對戰</h2>
+  <div id="online"><button data-r="8">開房・8 號球</button><button data-r="9">開房・9 號球</button><input id="room" placeholder="房號" maxlength="4" autocomplete="off"><button id="join">加入</button></div>
+  <div id="netMsg" class="sub"></div>
+  <button id="resume" hidden>繼續目前這局</button>
+  <h2>設定</h2>
+  <label><span>音量</span><input type="range" id="vol" min="0" max="1" step="0.05"></label>
+  <label><span>滑鼠靈敏度</span><input type="range" id="sens" min="0.3" max="2" step="0.05"></label>
+  <h2>操作</h2><div class="keys"></div>
+</div></div>
+<div id="power"><div></div><i></i></div>
+<div id="tip"><b></b><i></i></div>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---- 真實尺寸 (公尺)：9 呎球台，球徑 57.15mm ----
+const R = 0.028575, L = 1.27, W = 0.635;
+const BALL_E = 0.95, ROLL_DECEL = 0.1 /* 滾動阻力 μ≈0.01 → 0.1 m/s²；台呢越快越小 */, STEP = 1 / 1000;
+const G = 9.81, MU_SLIDE = 0.2, MU_RAIL = 0.2, SPIN_DECEL = 30; // 滑動摩擦、庫邊摩擦、側旋衰減 (rad/s²)
+const CUSH = 0.05, RAIL = 0.13, TOP = 0.045;
+const CG = 0.08, SG = 0.06; // 角袋/中袋開口
+const FOV = 55;
+
+// ---- 場景 ----
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0806);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.15;
+const camera = new THREE.PerspectiveCamera(FOV, innerWidth / innerHeight, 0.01, 50);
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+scene.add(new THREE.HemisphereLight(0xffeedd, 0x201810, 0.4));
+const lamps = []; // 燈罩和燈泡：俯視時隱藏，才不會擋住台面
+for (const x of [-0.75, 0, 0.75]) {
+  const s = new THREE.SpotLight(0xfff0d8, 9, 5, 0.85, 0.6, 2);
+  s.position.set(x, 1.0, 0); s.target.position.set(x, 0, 0);
+  s.castShadow = true; s.shadow.mapSize.set(1024, 1024); s.shadow.bias = -0.0002; s.shadow.radius = 6;
+  scene.add(s, s.target);
+  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.16, 32, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x0c3a22, side: THREE.DoubleSide, roughness: 0.4, metalness: 0.4 }));
+  shade.position.set(x, 1.06, 0); scene.add(shade);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035), new THREE.MeshBasicMaterial({ color: 0xfff6e0 }));
+  bulb.position.set(x, 1.0, 0); scene.add(bulb); lamps.push(shade, bulb);
+}
+
+// ---- 球台 ----
+// 材質貼圖全部用 canvas 程式產生：台呢纖維噪點、木紋
+function canvasTex(w, h, draw, rx, ry) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+  t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const feltTex = canvasTex(256, 256, (g, w, h) => { // 細碎纖維：每個像素亮度隨機 ±
+  const im = g.createImageData(w, h);
+  for (let i = 0; i < im.data.length; i += 4) { const v = 222 + (Math.random() - 0.5) * 46; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+  g.putImageData(im, 0, 0);
+}, 8, 8); // UV 單位是公尺 → 每 12.5 公分重複一次
+const woodTex = canvasTex(1024, 256, (g, w, h) => { // 波浪狀的深淺紋理線
+  g.fillStyle = '#5b2a12'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 220; i++) {
+    const y = Math.random() * h, ph = Math.random() * 6.28, amp = 2 + Math.random() * 6;
+    g.strokeStyle = Math.random() < 0.6 ? `rgba(28,10,3,${0.08 + Math.random() * 0.3})` : `rgba(150,80,40,${0.05 + Math.random() * 0.15})`;
+    g.lineWidth = 0.5 + Math.random() * 2.5; g.beginPath();
+    for (let x = 0; x <= w; x += 16) g.lineTo(x, y + amp * Math.sin(x / w * 6.2832 * 2 + ph));
+    g.stroke();
+  }
+}, 0.7, 2.5);
+const clothMat = new THREE.MeshPhysicalMaterial({ color: 0x0f5a33, map: feltTex, bumpMap: feltTex, bumpScale: 0.5, roughness: 0.92,
+  sheen: 0.35, sheenRoughness: 0.6, sheenColor: new THREE.Color(0x2a8a58) }); // sheen = 絨布邊緣的柔光
+const woodMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: woodTex, roughness: 0.55, clearcoat: 1, clearcoatRoughness: 0.12 }); // 亮光漆
+const leatherMat = new THREE.MeshStandardMaterial({ color: 0x1a110a, roughness: 0.75, side: THREE.DoubleSide });
+const pearlMat = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.25, metalness: 0.1 });
+function add(geo, mat, y = 0, cast = true) { // 由 Shape (x, -z) 擠出的幾何 → 轉成水平放在高度 y
+  const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.y = y;
+  m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m;
+}
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m;
+}
+const OL = L + CUSH + RAIL, OW = W + CUSH + RAIL, LC = L + CUSH, WC = W + CUSH;
+const pockets = [];
+for (const s of [-1, 1]) {
+  for (const t of [-1, 1]) pockets.push({ x: s * (L + 0.02), z: t * (W + 0.02), r: 0.065 });
+  pockets.push({ x: 0, z: s * (W + 0.04), r: 0.06 });
+}
+// 庫邊外緣矩形 (LC × WC) 一圈取樣，落在袋口圓內的點沿法線推出 (push=1 → 庫框內緣) 或推入 (push=-1 → 台面外緣)
+function pocketOutline(push) {
+  const pts = [], C = [[LC, -WC], [LC, WC], [-LC, WC], [-LC, -WC]];
+  const put = (x, z, a) => {
+    const dx = Math.cos(a) * push, dz = Math.sin(a) * push; let t = 0;
+    for (const p of pockets) {
+      const ox = x - p.x, oz = z - p.z, b = ox * dx + oz * dz, c = ox * ox + oz * oz - p.r * p.r;
+      if (c < 0) t = Math.max(t, -b + Math.sqrt(b * b - c));
+    }
+    const v = new THREE.Vector2(x + dx * t, -(z + dz * t)), l = pts[pts.length - 1];
+    if (!l || l.distanceTo(v) > 1e-5) pts.push(v);
+  };
+  for (let i = 0; i < 4; i++) {
+    const [ax, az] = C[i], [bx, bz] = C[(i + 1) % 4], n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.003);
+    const th = Math.atan2(-(bx - ax), bz - az); // 外法線角度
+    for (let k = 0; k <= 12; k++) put(ax, az, th - Math.PI / 2 + k * Math.PI / 24); // 轉角掃過 90°，角袋那塊圓弧才補得到
+    for (let j = 1; j < n; j++) put(ax + (bx - ax) * j / n, az + (bz - az) * j / n, th);
+  }
+  return pts;
+}
+// 台面：挖了六個袋口的石板 + 台呢
+add(new THREE.ExtrudeGeometry(new THREE.Shape(pocketOutline(-1)), { depth: 0.05, bevelEnabled: false, curveSegments: 1 }), clothMat, -0.05, false);
+// 庫框：圓角外框，內緣沿袋口挖弧，上緣倒圓角
+{
+  const s = new THREE.Shape(), r = 0.06;
+  s.moveTo(-OL + r, -OW); s.lineTo(OL - r, -OW); s.absarc(OL - r, -OW + r, r, -Math.PI / 2, 0);
+  s.lineTo(OL, OW - r); s.absarc(OL - r, OW - r, r, 0, Math.PI / 2);
+  s.lineTo(-OL + r, OW); s.absarc(-OL + r, OW - r, r, Math.PI / 2, Math.PI);
+  s.lineTo(-OL, -OW + r); s.absarc(-OL + r, -OW + r, r, Math.PI, Math.PI * 1.5);
+  s.holes.push(new THREE.Path(pocketOutline(1)));
+  const depth = 0.15, bt = 0.008;
+  add(new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: bt, bevelSize: 0.008, bevelSegments: 3, curveSegments: 16 }), woodMat, TOP - depth - bt);
+}
+box(2 * OL - 0.08, 0.16, 2 * OW - 0.08, woodMat, 0, -0.2, 0); // 下方裙板
+for (const s of [-1, 1]) for (const t of [-1, 1]) box(0.14, 0.5, 0.14, woodMat, s * (OL - 0.2), -0.52, t * (OW - 0.15));
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 0.8 }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -0.76; floor.receiveShadow = true; scene.add(floor);
+// 袋口：皮革袋筒 + 袋底
+for (const p of pockets) {
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(p.r, p.r * 0.85, 0.11, 32, 1, true), leatherMat);
+  cup.position.set(p.x, -0.055, p.z); scene.add(cup);
+  const bot = new THREE.Mesh(new THREE.CircleGeometry(p.r * 0.85, 32), leatherMat);
+  bot.rotation.x = -Math.PI / 2; bot.position.set(p.x, -0.11, p.z); scene.add(bot);
+}
+// 庫邊準星（菱形珠母貝）：長邊每 1/8、短邊每 1/4
+{
+  const g = new THREE.CircleGeometry(0.009, 4), mid = CUSH + RAIL / 2;
+  const at = (x, z) => { const m = new THREE.Mesh(g, pearlMat); m.rotation.x = -Math.PI / 2; m.position.set(x, TOP + 0.0006, z); scene.add(m); };
+  for (const k of [-3, -2, -1, 1, 2, 3]) for (const s of [-1, 1]) at(k * L / 4, s * (W + mid));
+  for (const k of [-1, 0, 1]) for (const s of [-1, 1]) at(s * (L + mid), k * W / 2);
+}
+
+// 庫邊：物理用線段 + 對應的模型（俯視梯形擠出 + 倒圓角，袋口那端斜切成袋角）
+const segs = [];
+for (const s of [-1, 1]) segs.push([-L + CG, s * W, -SG, s * W], [SG, s * W, L - CG, s * W], [s * L, -W + CG, s * L, W - CG]);
+for (const [x1, z1, x2, z2] of segs) {
+  const len = Math.hypot(x2 - x1, z2 - z1), ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+  const horiz = z1 === z2, nx = horiz ? 0 : Math.sign(x1), nz = horiz ? Math.sign(z1) : 0;
+  const jaw = x => (horiz && Math.abs(x) < 0.2 ? 0.012 : 0.035); // 中袋袋角較直、角袋斜 45° 左右
+  const bs = 0.004, bt = 0.005, h = 0.038, o = CUSH - bs;
+  const pts = [[x1 + nx * bs, z1 + nz * bs], [x2 + nx * bs, z2 + nz * bs],
+    [x2 + nx * o + ux * jaw(x2), z2 + nz * o + uz * jaw(x2)], [x1 + nx * o - ux * jaw(x1), z1 + nz * o - uz * jaw(x1)]];
+  add(new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x, -z))),
+    { depth: h - 2 * bt, bevelEnabled: true, bevelThickness: bt, bevelSize: bs, bevelSegments: 3 }), clothMat, bt);
+}
+
+// ---- 球 ----
+const COLORS = ['#f4efe0', '#f2c200', '#1544a8', '#cc1d1d', '#58288a', '#f06818', '#0b7a3f', '#7a1c20', '#111111'];
+function ballTex(n) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const g = c.getContext('2d'), col = COLORS[n > 8 ? n - 8 : n];
+  g.fillStyle = n > 8 ? COLORS[0] : col; g.fillRect(0, 0, 512, 256);
+  if (n > 8) { g.fillStyle = col; g.fillRect(0, 68, 512, 120); }
+  if (n > 0) for (const u of [128, 384]) {
+    g.fillStyle = COLORS[0]; g.beginPath(); g.arc(u, 128, 32, 0, 7); g.fill();
+    g.fillStyle = '#111'; g.font = 'bold 38px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n, u, 131);
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const sphere = new THREE.SphereGeometry(R, 48, 32);
+const balls = [];
+for (let n = 0; n < 16; n++) {
+  const mesh = new THREE.Mesh(sphere, new THREE.MeshPhysicalMaterial({ map: ballTex(n), roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03 }));
+  mesh.castShadow = true; scene.add(mesh);
+  balls.push({ n, x: 0, z: 0, vx: 0, vz: 0, y: 0, vy: 0, wx: 0, wy: 0, wz: 0, active: false, fall: null, mesh });
+}
+const cueBall = balls[0];
+function place(b, x, z) {
+  Object.assign(b, { x, z, vx: 0, vz: 0, y: 0, vy: 0, wx: 0, wy: 0, wz: 0, active: true, fall: null });
+  b.mesh.visible = true; b.mesh.position.set(x, R, z);
+}
+function hide(b) { b.active = false; b.fall = null; b.mesh.visible = false; }
+const overlaps = (x, z, skip) => balls.some(b => b !== skip && b.active && Math.hypot(b.x - x, b.z - z) < 2.05 * R);
+const GAP = 2 * R + 0.0003;
+function rackRows(rows) { // rows: 每排的球號，從頂點往後
+  rows.forEach((row, i) => row.forEach((n, j) => {
+    place(balls[n], L / 2 + i * GAP * Math.sqrt(3) / 2, (j - (row.length - 1) / 2) * GAP);
+    balls[n].mesh.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+  }));
+  place(cueBall, -L / 2, 0);
+}
+const rack8 = () => rackRows([[1], [9, 2], [10, 8, 3], [11, 7, 14, 4], [5, 13, 15, 6, 12]]);
+const rack9 = () => rackRows([[1], [2, 3], [4, 9, 5], [6, 7], [8]]);
+
+// ---- 音效：模態合成（幾個衰減正弦 = 硬物撞擊的共振）預先算成音訊緩衝，播放時只調音量/亮度/左右 ----
+// 再加一點房間殘響和壓縮器，讓聲音有空間感、開球也不會爆音。全部是瀏覽器內建 Web Audio，不用外部函式庫。
+const ac = new AudioContext(), SR = ac.sampleRate;
+const comp = ac.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5; comp.connect(ac.destination);
+const master = ac.createGain(); master.connect(comp);
+function buf(len, ch, fn) { // 產生正規化到峰值 1 的緩衝
+  const b = ac.createBuffer(ch, Math.ceil(len * SR), SR);
+  for (let c = 0; c < ch; c++) {
+    const d = b.getChannelData(c); let m = 0;
+    for (let i = 0; i < d.length; i++) { d[i] = fn(i / SR, c); m = Math.max(m, Math.abs(d[i])); }
+    for (let i = 0; i < d.length; i++) d[i] /= m || 1;
+  }
+  return b;
+}
+function modal(len, modes, click, jitter = 0) { // modes: [頻率, 衰減時間, 振幅]；click = 開頭接觸瞬間的寬頻脈衝長度
+  const m = modes.map(([f, d, a]) => [f * (1 + (Math.random() - 0.5) * jitter), d, a]);
+  return buf(len, 1, t => m.reduce((s, [f, d, a]) => s + a * Math.exp(-t / d) * Math.sin(6.2832 * f * t), 0)
+    + (t < click ? (Math.random() * 2 - 1) * 0.6 * (1 - t / click) : 0));
+}
+const verb = ac.createConvolver(), wet = ac.createGain(); wet.gain.value = 0.12;
+verb.buffer = buf(0.7, 2, t => (Math.random() * 2 - 1) * Math.exp(-t / 0.12)); // 撞球間大小的房間
+master.connect(verb).connect(wet).connect(comp);
+// 每種聲音做幾個略有差異的版本，連續撞擊才不會像機關槍
+const BALL = [0, 1, 2, 3].map(() => modal(0.06, [[3400, 0.005, 1], [5100, 0.0035, 0.55], [7300, 0.0025, 0.3], [2200, 0.007, 0.2]], 0.0005, 0.12));
+const S_RAIL = [0, 1].map(() => modal(0.14, [[150, 0.035, 1], [330, 0.02, 0.45], [720, 0.01, 0.25]], 0.002, 0.1));
+const CUE = [0, 1].map(() => modal(0.05, [[1300, 0.007, 1], [2700, 0.005, 0.5], [4000, 0.003, 0.35]], 0.0008, 0.08));
+const THUD = modal(0.25, [[90, 0.07, 1], [200, 0.035, 0.4], [520, 0.015, 0.2]], 0.003);
+const pick = a => a[Math.random() * a.length | 0], sv = new THREE.Vector3();
+function sound(b, vol, lp, x, z, t = ac.currentTime, rate = 1) { // 有給球的位置就依畫面左右聲道 + 距離衰減
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), p = ac.createStereoPanner();
+  s.buffer = b; s.playbackRate.value = rate * (0.97 + Math.random() * 0.06);
+  f.type = 'lowpass'; f.frequency.value = lp;
+  if (x !== undefined) {
+    vol /= 1 + 0.4 * camera.position.distanceTo(sv.set(x, 0, z));
+    sv.project(camera); p.pan.value = Math.max(-0.8, Math.min(0.8, sv.x * 0.7)) || 0;
+  }
+  g.gain.value = vol;
+  s.connect(f).connect(g).connect(p).connect(master); s.start(t);
+}
+let sfxBudget = 0; // ponytail: 每個畫面最多 6 個撞擊聲，開球十幾顆球同時撞也不會爆音
+const sfx = {
+  ok(v) { return ac.state === 'running' && v > 0.02 && sfxBudget++ < 6; },
+  ball(v, x, z) { // 球撞球：短促清脆的「喀」，輕碰時高頻被濾掉變得較鈍
+    if (!this.ok(v)) return; const a = Math.min(1, v / 3);
+    sound(REC.ballcollision || pick(BALL), 0.12 + 0.88 * a, 2500 + 13000 * a, x, z);
+  },
+  rail(v, x, z) { // 撞庫：橡膠 + 木頭的悶響
+    if (!this.ok(v)) return; const a = Math.min(1, v / 3);
+    REC.cushion ? sound(REC.cushion, 0.25 + 0.75 * a, 1500 + 10000 * a, x, z) : sound(pick(S_RAIL), 0.2 + 0.8 * a, 500 + 2500 * a, x, z);
+  },
+  land(v, x, z) { // 跳球落地
+    if (!this.ok(v)) return; const a = Math.min(1, v / 2);
+    sound(THUD, 0.6 * a, 1500, x, z, ac.currentTime, 1.8);
+  },
+  cue(v) { // 皮頭碰球的「篤」，力道越大越脆
+    if (ac.state !== 'running') return; const a = Math.min(1, v / 6);
+    sound(REC.cue || pick(CUE), 0.35 + 0.55 * a, 2500 + 9000 * a);
+  },
+  pocket(x, z) { // 碰袋口 → 落袋底「咚」→ 和袋裡的球輕碰幾下
+    if (ac.state !== 'running') return; const t = ac.currentTime;
+    if (REC.pot) return sound(REC.pot, 0.9, 20000, x, z);
+    sound(pick(S_RAIL), 0.35, 1500, x, z, t, 1.4);
+    sound(THUD, 0.8, 900, x, z, t + 0.05);
+    for (const [d, v] of [[0.22, 0.22], [0.33, 0.12], [0.41, 0.07]]) sound(pick(BALL), v, 1800, x, z, t + d, 0.85);
+  },
+};
+// 真實錄音：從 jsDelivr 抓 tailuge/billiards 的音檔（GPL-3.0，固定版本）。載入失敗就繼續用上面的合成音
+const REC = {}, SND = 'https://cdn.jsdelivr.net/gh/tailuge/billiards@8aeb1dee14e7dccf71b47cdf6f68fc33e5f6459b/dist/sounds/';
+for (const n of ['ballcollision', 'cushion', 'cue', 'pot'])
+  fetch(SND + n + '.ogg').then(r => r.arrayBuffer()).then(b => ac.decodeAudioData(b)).then(b => (REC[n] = b)).catch(() => {});
+// 台面滾動聲：棕噪音（低頻為主、不像白噪音那樣嘶嘶響）經低通，音量很小，跟著台上球的總速度
+let brown = 0;
+const rollSrc = ac.createBufferSource(), rollF = ac.createBiquadFilter(), rollG = ac.createGain();
+rollSrc.buffer = buf(4, 1, () => (brown = brown * 0.996 + (Math.random() * 2 - 1) * 0.04));
+rollSrc.loop = true; rollF.type = 'lowpass'; rollF.frequency.value = 150; rollF.Q.value = 0.5; rollG.gain.value = 0;
+rollSrc.connect(rollF).connect(rollG).connect(master); rollSrc.start();
+function updateRoll(on) {
+  let s = 0; if (on) for (const b of balls) if (b.active && !b.y) s += Math.hypot(b.vx, b.vz);
+  rollG.gain.setTargetAtTime(Math.min(0.1, s * 0.025), ac.currentTime, 0.1);
+  rollF.frequency.setTargetAtTime(120 + Math.min(280, s * 60), ac.currentTime, 0.1);
+}
+
+// ---- 物理 ----
+// 每顆球有線速度 v、離台高度 y / vy 與角速度 ω（實心球 I = 2/5 mR²）。
+// 球與台面接觸點滑動速度 u = v + ω×(0,-R,0) = (vx + R·wz, vz - R·wx)
+// u≠0 → 滑動摩擦（低桿拉回、高桿跟進、扎桿弧線都從這裡來）；u=0 → 純滾動
+// ponytail: 球永遠撞得到庫邊（不會飛出台面）；跳球高過庫邊的情況很少見，要做再加出界規則
+let shot = null;
+const CUSH_H = 0.0363;                        // 庫邊鼻高（球徑 63.5%）
+const CS = (CUSH_H - R) / R, CC = Math.sqrt(1 - CS * CS); // 接觸點在球心上方的 sin/cos
+function applyCloth(b, fx, fz) { // 台面摩擦衝量（每單位質量）：同時改 v 與 ω
+  b.vx += fx; b.vz += fz; b.wz += 2.5 * fx / R; b.wx -= 2.5 * fz / R;
+}
+function step(dt) {
+  const act = balls.filter(b => b.active);
+  for (const b of act) {
+    const ux = b.vx + R * b.wz, uz = b.vz - R * b.wx, us = Math.hypot(ux, uz);
+    if (b.y > 0 || b.vy > 0) { // 空中：只有重力
+      b.vy -= G * dt; b.y += b.vy * dt;
+      if (b.y <= 0) { // 落地：反彈一半，落地瞬間的摩擦衝量會改變旋轉/方向（扎桿、跳球落地後的走向）
+        b.y = 0;
+        const jn = 1.5 * -b.vy;
+        b.vy = -b.vy > 0.25 ? -b.vy * 0.5 : 0;
+        if (us > 1e-6) { const f = Math.min(MU_SLIDE * jn, us / 3.5); applyCloth(b, -ux / us * f, -uz / us * f); }
+        sfx.land(jn, b.x, b.z);
+      }
+    } else if (us > 1e-3) { // 滑動：摩擦讓 u 以 3.5·μg 的速率歸零
+      const dv = MU_SLIDE * G * dt;
+      if (3.5 * dv >= us) applyCloth(b, -ux / 3.5, -uz / 3.5);
+      else applyCloth(b, -ux / us * dv, -uz / us * dv);
+    } else { // 滾動
+      const sp = Math.hypot(b.vx, b.vz), ns = sp - ROLL_DECEL * dt;
+      if (ns < 0.005) b.vx = b.vz = 0; else { b.vx *= ns / sp; b.vz *= ns / sp; }
+      b.wz = -b.vx / R; b.wx = b.vz / R;
+    }
+    if (!b.y) b.wy -= Math.sign(b.wy) * Math.min(Math.abs(b.wy), SPIN_DECEL * dt);
+    b.x += b.vx * dt; b.z += b.vz * dt;
+  }
+  for (let i = 0; i < act.length; i++) for (let j = i + 1; j < act.length; j++) {
+    const a = act[i], b = act[j], dx = b.x - a.x, dz = b.z - a.z, dy = b.y - a.y;
+    const hd = Math.sqrt(Math.max(0, 4 * R * R - dy * dy)), d2 = dx * dx + dz * dz; // 一顆在空中時，水平碰撞距離變短；跳夠高就飛過去
+    if (!hd || d2 >= hd * hd || d2 === 0) continue;
+    const d = Math.sqrt(d2), nx = dx / d, nz = dz / d;
+    const vn = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
+    if (vn < 0) {
+      const imp = -(1 + BALL_E) * vn / 2;
+      a.vx -= imp * nx; a.vz -= imp * nz; b.vx += imp * nx; b.vz += imp * nz;
+      // 拋射 (throw)：接觸面切向滑動 s = (va-vb)·t − R(ωya+ωyb)，球間摩擦把它往 0 推
+      // 每單位切向衝量讓 s 變化 7（兩顆球各 1 + 2.5），μ 隨滑動速度遞減（Alciatore 實測式）
+      const tx = -nz, tz = nx, s = (a.vx - b.vx) * tx + (a.vz - b.vz) * tz - R * (a.wy + b.wy);
+      const mu = 0.01 + 0.108 * Math.exp(-1.088 * Math.abs(s));
+      const J = Math.max(-mu * imp, Math.min(mu * imp, -s / 7));
+      a.vx += J * tx; a.vz += J * tz; a.wy -= 2.5 * J / R;
+      b.vx -= J * tx; b.vz -= J * tz; b.wy -= 2.5 * J / R;
+      sfx.ball(-vn, (a.x + b.x) / 2, (a.z + b.z) / 2);
+      if (shot && shot.firstHit == null && (a === cueBall || b === cueBall)) shot.firstHit = (a === cueBall ? b : a).n;
+    }
+    const o = (hd - d) / 2;
+    a.x -= nx * o; a.z -= nz * o; b.x += nx * o; b.z += nz * o;
+  }
+  for (const b of act) {
+    for (const [x1, z1, x2, z2] of segs) {
+      const sx = x2 - x1, sz = z2 - z1;
+      const t = Math.max(0, Math.min(1, ((b.x - x1) * sx + (b.z - z1) * sz) / (sx * sx + sz * sz)));
+      const px = x1 + sx * t, pz = z1 + sz * t, dx = b.x - px, dz = b.z - pz, d2 = dx * dx + dz * dz;
+      if (d2 >= R * R) continue;
+      const d = Math.sqrt(d2) || 1e-9, nx = dx / d, nz = dz / d, vn = b.vx * nx + b.vz * nz;
+      if (vn < 0) {
+        // 反彈係數隨撞庫速度下降：輕碰 ~0.9，大力 ~0.65
+        const e = Math.max(0.6, 0.92 - 0.045 * -vn), jn = -(1 + e) * vn;
+        b.vx += jn * nx; b.vz += jn * nz;
+        // 庫邊接觸點在球心上方 (sinθ≈0.27)：在接觸點算 3D 滑動速度，用庫邊摩擦衝量同時處理
+        // 高低桿撞庫（水平旋轉）與塞球（垂直軸旋轉）。法向衝量總量 = jn / cosθ
+        const rx = -nx * CC * R, ry = CS * R, rz = -nz * CC * R;
+        let cx = b.vx + b.wy * rz - b.wz * ry, cy = b.wz * rx - b.wx * rz, cz = b.vz + b.wx * ry - b.wy * rx;
+        const Nx = nx * CC, Ny = -CS, Nz = nz * CC, dn = cx * Nx + cy * Ny + cz * Nz;
+        cx -= dn * Nx; cy -= dn * Ny; cz -= dn * Nz;
+        const sl = Math.hypot(cx, cy, cz);
+        if (sl > 1e-6) {
+          const f = Math.min(MU_RAIL * jn / CC, sl / 3.5), Fx = -cx / sl * f, Fy = -cy / sl * f, Fz = -cz / sl * f, k = 2.5 / (R * R);
+          b.vx += Fx; b.vz += Fz; // 垂直分量由台面吸收
+          b.wx += k * (ry * Fz - rz * Fy); b.wy += k * (rz * Fx - rx * Fz); b.wz += k * (rx * Fy - ry * Fx);
+        }
+        sfx.rail(-vn, b.x, b.z);
+      }
+      b.x = px + nx * R; b.z = pz + nz * R;
+    }
+    if (b.y > 0.02) continue; // 在空中不會掉袋
+    for (const p of pockets) if (Math.hypot(b.x - p.x, b.z - p.z) < p.r || Math.abs(b.x) > L + 0.12 || Math.abs(b.z) > W + 0.12) {
+      b.active = false; b.fall = { x: p.x, z: p.z, t: 0 }; b.vx = b.vz = b.vy = b.y = 0;
+      sfx.pocket(p.x, p.z);
+      toast(b === cueBall ? '母球落袋！' : `● ${b.n} 號進袋`);
+      if (shot) b === cueBall ? (shot.scratch = true) : shot.potted.push(b.n);
+      break;
+    }
+  }
+}
+
+// ---- 模式與規則 ----
+const MODES = ['8 號球・對電腦', '8 號球・雙人', '9 號球・對電腦', '9 號球・雙人', '練習', '挑戰'];
+const CHALLENGES = [ // cue: 母球位置；balls: [球號, x, z]；shots: 限制桿數
+  { name: '小切角進角袋', shots: 1, cue: [0.4, 0.3], balls: [[1, 0.9, 0.45]] },
+  { name: '切球進中袋', shots: 1, cue: [0.6, -0.1], balls: [[2, 0.25, 0.45]] },
+  { name: '三球清台', shots: 3, cue: [-0.2, 0.1], balls: [[1, 0.8, 0.5], [2, -0.9, -0.45], [3, 0, -0.5]] },
+  { name: '五球走位', shots: 5, cue: [-0.6, 0], balls: [[1, 1.1, 0.5], [2, 0.6, -0.3], [3, -0.3, 0.4], [4, -1.0, -0.5], [5, 0.2, 0]] },
+];
+let mode = 0;
+const rules = () => mode < 2 ? 8 : mode < 4 ? 9 : mode === 4 ? 'practice' : 'challenge';
+const cpuMode = () => mode === 0 || mode === 2;
+const cpuTurn = () => cpuMode() && game.cur === 1 && !game.over;
+const nameOf = i => net ? (i === net.me ? '你' : '對手') : cpuMode() && i === 1 ? '電腦' : `玩家 ${i + 1}`;
+const groupOf = n => n < 8 ? '全色' : n > 8 ? '花色' : '8';
+const remaining = g => balls.filter(b => b.active && b.n && groupOf(b.n) === g).length;
+const lowest = () => Math.min(...balls.filter(b => b.active && b.n).map(b => b.n));
+// 9 號球：下一顆要打的球頭上浮一個號碼牌、腳下一圈光環
+const markTex = {}, markSprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, opacity: 0.8, sizeAttenuation: false, fog: false, toneMapped: false }));
+const markRing = new THREE.Mesh(new THREE.RingGeometry(R * 1.2, R * 1.4, 48), new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.6, depthWrite: false, fog: false, toneMapped: false }));
+markRing.rotation.x = -Math.PI / 2; markSprite.scale.setScalar(0.04); markSprite.renderOrder = 9; scene.add(markSprite, markRing); // 號碼牌固定螢幕大小，遠處的球也看得清楚
+function updateMarker(t) {
+  const n = settings.mark && rules() === 9 && (state === 'aim' || state === 'stroke') ? lowest() : 0, b = balls[n];
+  markSprite.visible = markRing.visible = !!(n && b && b.active);
+  if (!markSprite.visible) return;
+  if (!markTex[n]) { // 球色圓牌 + 白圈 + 號碼
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    g.fillStyle = COLORS[n > 8 ? n - 8 : n]; g.strokeStyle = '#fff'; g.lineWidth = 8; g.beginPath(); g.arc(64, 64, 56, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 64, 34, 0, 7); g.fill();
+    g.fillStyle = '#111'; g.font = 'bold 48px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n, 64, 67);
+    markTex[n] = new THREE.CanvasTexture(c); markTex[n].colorSpace = THREE.SRGBColorSpace;
+  }
+  if (markSprite.material.map !== markTex[n]) { markSprite.material.map = markTex[n]; markSprite.material.needsUpdate = true; }
+  markSprite.position.set(b.x, 2 * R + 0.045 + 0.008 * Math.sin(t * 4), b.z);
+  markRing.position.set(b.x, 0.003, b.z);
+}
+const game = { cur: 0, groups: [null, null], ballInHand: false, over: false, breakShot: false, ch: 0, shotsLeft: 0 };
+let state = 'aim', ai = null;
+
+function newGame() {
+  balls.forEach(hide);
+  const r = rules();
+  Object.assign(game, { cur: 0, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
+  if (r === 9) rack9();
+  else if (r === 'challenge') {
+    const c = CHALLENGES[game.ch];
+    place(cueBall, ...c.cue);
+    for (const [n, x, z] of c.balls) place(balls[n], x, z);
+    game.shotsLeft = c.shots;
+  } else rack8();
+  state = 'aim'; ai = null; rec = [];
+  flash(r === 'challenge' ? `挑戰 ${game.ch + 1}：${CHALLENGES[game.ch].name}` : r === 'practice' ? '練習模式：隨時自由擺球' : `${MODES[mode]}　${nameOf(0)} 開球`);
+}
+function respawnCue() {
+  let x = -L / 2;
+  while (overlaps(x, 0, cueBall)) x -= 2.1 * R;
+  place(cueBall, x, 0);
+}
+function gameOver(text) { game.over = true; state = 'over'; flash(text + '　按 R 再來一局', 1e9); }
+
+function endShot() {
+  for (const b of balls) b.wy = 0; // 停下後殘留的原地側旋歸零
+  state = 'aim'; ai = null;
+  if (shot.scratch) respawnCue();
+  const r = rules();
+  if (r === 'practice') return;
+  if (r === 'challenge') return endChallenge();
+  if (r === 9) return end9();
+  end8();
+}
+function end8() {
+  const p = game.cur, g = game.groups[p], pots = shot.potted;
+  const legalFirst = shot.firstHit != null && (shot.onEight ? shot.firstHit === 8 : g ? groupOf(shot.firstHit) === g : shot.firstHit !== 8);
+  const foul = shot.scratch || !legalFirst;
+  if (pots.includes(8)) {
+    const win = shot.onEight && !foul;
+    return gameOver(`${nameOf(win ? p : 1 - p)} 獲勝！${win ? '' : '（8 號球提前或犯規落袋）'}`);
+  }
+  if (!g && pots[0] && !foul) { game.groups[p] = groupOf(pots[0]); game.groups[1 - p] = groupOf(pots[0]) === '全色' ? '花色' : '全色'; }
+  const mine = game.groups[p];
+  const keep = !foul && pots.some(n => !mine || groupOf(n) === mine);
+  turnResult(foul, keep);
+}
+function end9() {
+  const p = game.cur;
+  const foul = shot.scratch || shot.firstHit !== shot.lowest;
+  if (shot.potted.includes(9)) {
+    if (!foul) return gameOver(`${nameOf(p)} 打進 9 號球獲勝！`);
+    let x = L / 2; while (overlaps(x, 0, balls[9])) x += 2.1 * R;
+    place(balls[9], x, 0); // 犯規打進 9 號：放回置球點
+  }
+  turnResult(foul, !foul && shot.potted.length > 0);
+}
+function turnResult(foul, keep) {
+  if (!keep) game.cur = 1 - game.cur;
+  game.ballInHand = foul;
+  const why = shot.scratch ? '母球落袋' : shot.firstHit == null ? '沒有碰到球' : '先碰到錯誤的球';
+  flash(foul ? `犯規！${why} → ${nameOf(game.cur)} 自由球` : keep ? `${nameOf(game.cur)} 繼續` : `換 ${nameOf(game.cur)}`);
+}
+function endChallenge() {
+  game.shotsLeft--;
+  if (shot.scratch) return gameOver('母球落袋，挑戰失敗');
+  if (!balls.some(b => b.active && b.n)) {
+    game.over = true; state = 'over'; flash('挑戰成功！', 2);
+    const m = mode;
+    return setTimeout(() => { if (mode === m) { game.ch = (game.ch + 1) % CHALLENGES.length; newGame(); } }, 2200);
+  }
+  if (game.shotsLeft <= 0) return gameOver('桿數用完，挑戰失敗');
+  flash(`剩 ${game.shotsLeft} 桿`);
+}
+
+// ---- 電腦對手 ----
+// 對每顆合法目標球 × 每個袋口：算出影子球位置，檢查兩段路線沒被擋，挑「切角小、距離短」的那一桿
+const legalTargets = () => {
+  const obj = balls.filter(b => b.active && b.n);
+  if (rules() === 9) return obj.filter(b => b.n === lowest());
+  const g = game.groups[game.cur];
+  if (!g) return obj.filter(b => b.n !== 8);
+  const mine = obj.filter(b => groupOf(b.n) === g);
+  return mine.length ? mine : obj.filter(b => b.n === 8);
+};
+function blocked(ax, az, bx, bz, skip) {
+  const sx = bx - ax, sz = bz - az, l2 = sx * sx + sz * sz || 1e-9;
+  return balls.some(b => {
+    if (!b.active || skip.includes(b)) return false;
+    const t = Math.max(0, Math.min(1, ((b.x - ax) * sx + (b.z - az) * sz) / l2));
+    return Math.hypot(b.x - ax - sx * t, b.z - az - sz * t) < 2 * R;
+  });
+}
+function planFrom(cx, cz) {
+  let best = null;
+  for (const t of legalTargets()) for (const p of pockets) {
+    let ux = p.x - t.x, uz = p.z - t.z; const pd = Math.hypot(ux, uz); ux /= pd; uz /= pd;
+    // 中袋只收夠正的角度；角袋不能從袋口背面進
+    if (p.x === 0 ? Math.abs(uz) < 0.6 : ux * Math.sign(p.x) < -0.1 || uz * Math.sign(p.z) < -0.1) continue;
+    const gx = t.x - ux * 2 * R, gz = t.z - uz * 2 * R;
+    let dx = gx - cx, dz = gz - cz; const cd = Math.hypot(dx, dz); if (cd < 1e-3) continue;
+    dx /= cd; dz /= cd;
+    const cut = dx * ux + dz * uz; if (cut < 0.35) continue;
+    if (blocked(cx, cz, gx, gz, [cueBall, t]) || blocked(t.x, t.z, p.x, p.z, [t, cueBall])) continue;
+    const score = cut * cut / (cd + 1.5 * pd);
+    if (best && score <= best.score) continue;
+    // 子球要滾 pd+0.35m：滾動速度 √(2·a·d)，滑動→滾動剩 5/7，再除以切角傳遞率
+    const vObj = 1.4 * Math.sqrt(2 * ROLL_DECEL * (pd + 0.35));
+    best = { score, yaw: Math.atan2(dz, dx), speed: Math.min(6, vObj / (cut * 0.97) * 1.1 + 0.35 * cd + 0.3) };
+  }
+  return best;
+}
+function aiPlan() {
+  const toPower = v => Math.sqrt(Math.max(0, (v - 0.1) / 7.9));
+  if (game.breakShot) return { yaw: Math.atan2(balls[1].z - cueBall.z, balls[1].x - cueBall.x) + (Math.random() - 0.5) * 0.01, power: 1 };
+  if (game.ballInHand) { // 隨機試 200 個擺位，挑最好打的
+    let bestS = null, pos = null;
+    for (let i = 0; i < 200; i++) {
+      const x = (Math.random() * 2 - 1) * (L - R), z = (Math.random() * 2 - 1) * (W - R);
+      if (overlaps(x, z, cueBall)) continue;
+      const s = planFrom(x, z);
+      if (s && (!bestS || s.score > bestS.score)) { bestS = s; pos = [x, z]; }
+    }
+    if (pos) { cueBall.x = pos[0]; cueBall.z = pos[1]; }
+  }
+  let s = planFrom(cueBall.x, cueBall.z);
+  if (!s) { // 沒有好球：輕推最近的合法球（防守）
+    const t = legalTargets().sort((a, b) => Math.hypot(a.x - cueBall.x, a.z - cueBall.z) - Math.hypot(b.x - cueBall.x, b.z - cueBall.z))[0] || balls.find(b => b.active && b.n) || { x: cueBall.x + 1, z: cueBall.z };
+    s = { yaw: Math.atan2(t.z - cueBall.z, t.x - cueBall.x), speed: 1.5 };
+  }
+  // ponytail: 難度只有一個旋鈕 —— 瞄準誤差 ±0.35°
+  return { yaw: s.yaw + (Math.random() - 0.5) * 0.012, power: toPower(s.speed) };
+}
+
+// ---- 輸入 / 鏡頭 ----
+let yaw = 0, pitch = 0.22, dist = 0.75, power = 0, charging = false, topView = false, helpers = true;
+let elev = 0.05; // 球桿仰角 (rad)
+const tip = { x: 0, y: 0 }; // 打點：-1..1，1 = 偏離中心 0.5R（再多就滑桿）
+const keys = {};
+const canvas = renderer.domElement;
+const locked = () => document.pointerLockElement === canvas;
+const lockPointer = () => { try { canvas.requestPointerLock()?.catch?.(() => {}); } catch {} };
+canvas.addEventListener('click', () => { if (!menuOpen && !locked()) lockPointer(); });
+document.addEventListener('pointerlockchange', () => { if (!locked()) { charging = false; openMenu(true); } });
+
+// 選單：模式、繼續、音量、靈敏度（設定記在這台瀏覽器）
+const settings = { vol: 0.8, sens: 1, mark: true };
+try { Object.assign(settings, JSON.parse(localStorage.getItem('pool-settings') || '{}')); } catch {}
+const saveSettings = () => { try { localStorage.setItem('pool-settings', JSON.stringify(settings)); } catch {} };
+master.gain.value = settings.vol;
+const menuEl = document.getElementById('menu'), resumeBtn = document.getElementById('resume');
+let menuOpen = true, started = false;
+function openMenu(v) {
+  menuOpen = v; menuEl.classList.toggle('on', v); charging = false;
+  resumeBtn.hidden = !started;
+  document.querySelectorAll('#modes button').forEach((b, i) => b.classList.toggle('cur', started && i === mode));
+}
+function play() { ac.resume(); started = true; openMenu(false); lockPointer(); }
+document.getElementById('modes').innerHTML = MODES.map((m, i) => `<button data-i="${i}">${m}</button>`).join('');
+document.getElementById('modes').addEventListener('click', e => {
+  const i = e.target.dataset?.i; if (i == null) return;
+  leaveNet(); mode = +i; game.ch = 0; newGame(); play();
+});
+resumeBtn.addEventListener('click', play);
+for (const [id, key, apply] of [['vol', 'vol', v => (master.gain.value = v)], ['sens', 'sens', () => {}]]) {
+  const el = document.getElementById(id); el.value = settings[key];
+  el.addEventListener('input', () => { settings[key] = +el.value; apply(+el.value); saveSettings(); });
+}
+const KEYS = [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
+  ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
+  ['H', '輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局'], ['M', '切換模式'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明']];
+document.querySelectorAll('.keys').forEach(el => (el.innerHTML = KEYS.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('')));
+const helpPanel = document.getElementById('helpPanel');
+addEventListener('mousemove', e => {
+  if (!locked()) return;
+  const k = (e.shiftKey ? 0.15 : 1) * settings.sens;
+  if (!notMine()) yaw += e.movementX * 0.0025 * k;
+  pitch = Math.min(1.3, Math.max(0.03, pitch + e.movementY * 0.002 * k));
+});
+addEventListener('wheel', e => { dist = Math.min(2.5, Math.max(0.3, dist * (1 + e.deltaY * 0.001))); });
+addEventListener('mousedown', e => { if (locked() && !menuOpen && e.button === 0 && state === 'aim' && !notMine()) { charging = true; power = 0; } });
+addEventListener('mouseup', e => { if (e.button === 0 && charging) { charging = false; if (power > 0.02) { send({ t: 'shot', y: yaw, p: power, tip: { ...tip }, el: elev, x: cueBall.x, z: cueBall.z }); shoot(power); } else power = 0; } });
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Tab' || e.code === 'Slash') { e.preventDefault(); helpPanel.classList.toggle('on'); } // 不用按 Shift
+  if (e.code === 'Escape' && !locked() && started) menuOpen ? play() : openMenu(true);
+  if (menuOpen) return;
+  if (e.code === 'KeyV') topView = !topView;
+  if (e.code === 'KeyR') { if (net && !net.open) return; newGame(); sendSync(true); }
+  if (e.code === 'KeyC') { tip.x = tip.y = 0; elev = 0.05; }
+  if (e.code === 'KeyH') helpers = !helpers;
+  if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); toast(settings.mark ? '目標提示：開' : '目標提示：關'); }
+  if (e.code === 'KeyM' && !net) { mode = (mode + 1) % MODES.length; newGame(); }
+  if (e.code === 'KeyP' && (state === 'aim' || state === 'over') && rec.length) replay = { t: 0, i: 0, prev: state }, state = 'replay';
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+// 出桿：先播放球桿往前送的動作，桿頭碰到球才真正施力
+let stroke = null, fovKick = 0, lastPower = 0;
+function shoot(p, t = tip, el = elev) { stroke = { t: 0, p, tip: { ...t }, elev: el }; state = 'stroke'; }
+// 球桿方向 d3（往下仰角 el）、右 rt、桿的「上」up；擊球點 = 球心 + 0.5R·(tip.x·rt + tip.y·up)
+function cueFrame(yw, el) {
+  const dx = Math.cos(yw), dz = Math.sin(yw), c = Math.cos(el), s = Math.sin(el);
+  return { d: [dx * c, -s, dz * c], rt: [-dz, 0, dx], up: [dx * s, c, dz * s] };
+}
+function launch({ p, tip: t, elev: el }) {
+  const speed = 0.1 + 7.9 * p * p, g = game.groups[game.cur];
+  // 擊球點偏離 h 產生角速度 ω = 5·v·h / (2R²)；h = 0.5R·tip → ω = 1.25·v·tip / R
+  // tip.y = 0.8 剛好是自然滾動；打右邊 → 由上往下看逆時針 (wy>0)，母球往左偏一點 (squirt)
+  // 一般化到有仰角：ω = 5/(2R²)·(p × m·v) = 2.5·speed/R²·(p × d3)
+  // 仰角 + 偏左右 → ω 有沿行進方向的水平分量 → 台面摩擦把球往打點那側拉成弧線（扎桿）
+  const { d, rt, up } = cueFrame(yaw - t.x * 0.03, el);
+  const px = 0.5 * R * (t.x * rt[0] + t.y * up[0]), py = 0.5 * R * t.y * up[1], pz = 0.5 * R * (t.x * rt[2] + t.y * up[2]), k = 2.5 * speed / (R * R);
+  cueBall.vx = d[0] * speed; cueBall.vz = d[2] * speed;
+  cueBall.wx = k * (py * d[2] - pz * d[1]); cueBall.wy = k * (pz * d[0] - px * d[2]); cueBall.wz = k * (px * d[1] - py * d[0]);
+  // 往下的分量把球壓進台面再彈起（台面反彈約 0.5）→ 跳球
+  const vy = 0.5 * speed * -d[1]; if (vy > 0.05) cueBall.vy = vy;
+  shotBy = game.cur;
+  shot = { firstHit: null, potted: [], scratch: false, onEight: !!g && remaining(g) === 0, lowest: lowest() };
+  game.ballInHand = rules() === 'practice'; game.breakShot = false;
+  tip.x = tip.y = 0; elev = 0.05; // 每桿打完，打點與仰角回到中心
+  state = 'moving'; rec = []; simT = 0; power = 0;
+  sfx.cue(speed); lastPower = p; camDir.set(Math.cos(yaw), 0, Math.sin(yaw));
+  fovKick = 2 + 5 * p;
+}
+
+// ---- 重播 ----
+let rec = [], replay = null, simT = 0;
+function snap() {
+  const f = new Float32Array(16 * 8);
+  balls.forEach((b, i) => {
+    const m = b.mesh, o = i * 8;
+    f.set([m.position.x, m.position.y, m.position.z, m.quaternion.x, m.quaternion.y, m.quaternion.z, m.quaternion.w, m.visible ? 1 : 0], o);
+  });
+  rec.push({ t: simT, f });
+}
+
+// 瞄準輔助：母球路徑、影子球、目標球去向、母球撞後走向
+const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
+const cueLineMat = new THREE.LineDashedMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.7, dashSize: 0.02, gapSize: 0.015 });
+const mkLine = mat => new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), mat);
+const aimLine = mkLine(lineMat), objLine = mkLine(lineMat), cueLine = mkLine(cueLineMat);
+const ghost = new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 }));
+scene.add(aimLine, objLine, cueLine, ghost);
+function setLine(line, ax, az, bx, bz) {
+  const a = line.geometry.attributes.position;
+  a.setXYZ(0, ax, R, az); a.setXYZ(1, bx, R, bz); a.needsUpdate = true;
+  line.geometry.computeBoundingSphere(); line.computeLineDistances();
+}
+function updateAim(dx, dz) {
+  let best = Infinity, hit = null;
+  for (const b of balls) {
+    if (b === cueBall || !b.active) continue;
+    const ox = b.x - cueBall.x, oz = b.z - cueBall.z, proj = ox * dx + oz * dz;
+    const perp2 = ox * ox + oz * oz - proj * proj;
+    if (proj <= 0 || perp2 > 4 * R * R) continue;
+    const t = proj - Math.sqrt(4 * R * R - perp2);
+    if (t < best) { best = t; hit = b; }
+  }
+  const tx = dx > 0 ? (L - R - cueBall.x) / dx : dx < 0 ? (-L + R - cueBall.x) / dx : Infinity;
+  const tz = dz > 0 ? (W - R - cueBall.z) / dz : dz < 0 ? (-W + R - cueBall.z) / dz : Infinity;
+  if (Math.min(tx, tz) < best) { best = Math.min(tx, tz); hit = null; }
+  const gx = cueBall.x + dx * best, gz = cueBall.z + dz * best;
+  setLine(aimLine, cueBall.x, cueBall.z, gx, gz);
+  ghost.position.set(gx, R, gz);
+  objLine.visible = cueLine.visible = false;
+  if (!hit || !helpers) return;
+  const nx = (hit.x - gx) / (2 * R), nz = (hit.z - gz) / (2 * R), dot = dx * nx + dz * nz;
+  objLine.visible = true;
+  setLine(objLine, hit.x, hit.z, hit.x + nx * 0.3, hit.z + nz * 0.3);
+  // 母球撞後：沿切線走（定桿），高桿把丟掉的前進量拿回約 2/7，低桿反向拉
+  // ponytail: 忽略撞擊前旋轉已被摩擦吃掉多少，遠距離低桿會比線短
+  const f = Math.max(-1, Math.min(1.25, tip.y / 0.8)) * (tip.y >= 0 ? 2 / 7 : 0.6) * dot;
+  const cx = dx - dot * nx + f * nx, cz = dz - dot * nz + f * nz, cl = Math.hypot(cx, cz);
+  if (cl < 0.02) return;
+  cueLine.visible = true;
+  setLine(cueLine, gx, gz, gx + cx / cl * 0.35, gz + cz / cl * 0.35);
+}
+
+// 球桿
+const cue = new THREE.Group(); scene.add(cue);
+function cuePart(rt, rb, len, color, z0) {
+  const g = new THREE.CylinderGeometry(rt, rb, len, 24); g.rotateX(Math.PI / 2);
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 0.3 }));
+  m.position.z = z0 - len / 2; m.castShadow = true; cue.add(m);
+}
+cuePart(0.0062, 0.0062, 0.01, 0x2f6fb8, 0);
+cuePart(0.0064, 0.0064, 0.02, 0xf3efe6, -0.01);
+cuePart(0.0065, 0.011, 1.0, 0xd9b77e, -0.03);
+cuePart(0.011, 0.0145, 0.42, 0x2a0e04, -1.03);
+
+// ---- HUD ----
+const elevEl = document.querySelector('#tip b'), tipDot = document.querySelector('#tip i'), toastEl = document.getElementById('toast');
+const hudEl = document.getElementById('hud'), msgEl = document.getElementById('msg'), powEl = document.querySelector('#power div');
+const hintEl = document.getElementById('hint'), powBox = document.getElementById('power'), powMark = document.querySelector('#power i');
+let msgTimer = 0, toastTimer = 0;
+function flash(t, dur = 2.5) { msgEl.textContent = t; msgEl.style.opacity = 1; msgTimer = dur; }
+function toast(t) { toastEl.textContent = t; toastEl.classList.add('on'); toastTimer = 1.2; }
+const chip = (n, on, target) => {
+  const col = COLORS[n > 8 ? n - 8 : n], bg = n > 8 ? `linear-gradient(${COLORS[0]} 27%,${col} 27% 73%,${COLORS[0]} 73%)` : col;
+  return `<span class="chip${on ? '' : ' off'}${target ? ' target' : ''}" style="background:${bg}"><b>${n}</b></span>`;
+};
+const potted = n => !balls[n].active;
+const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+const playerRow = (i, extra) => `<div class="row${game.cur === i && !game.over ? ' cur' : ''}"><span class="name">${nameOf(i)}</span>${extra}</div>`;
+let hudHtml = '';
+function updateHud() {
+  const r = rules(), out = [`<div class="mode">${net ? `連線對戰・${rules()} 號球` : MODES[mode]}</div>`];
+  if (r === 8) out.push(...[0, 1].map(i => {
+    const g = game.groups[i];
+    if (!g) return playerRow(i, '<span class="grp">未分組</span>');
+    const nums = g === '全色' ? range(1, 7) : range(9, 15), done = nums.every(potted);
+    return playerRow(i, `<span class="grp">${g}</span>${nums.map(n => chip(n, potted(n))).join('')}${chip(8, potted(8), done)}`);
+  }));
+  if (r === 9) {
+    const lo = lowest();
+    out.push(...[0, 1].map(i => playerRow(i, '')), `<div class="row">${range(1, 9).map(n => chip(n, potted(n), n === lo)).join('')}</div>`);
+  }
+  if (r === 'challenge') {
+    const c = CHALLENGES[game.ch];
+    out.push(`<div class="row"><span class="name">挑戰 ${game.ch + 1}/${CHALLENGES.length}</span><span class="grp">${c.name}　剩 ${game.shotsLeft} 桿</span>${c.balls.map(([n]) => chip(n, potted(n))).join('')}</div>`);
+  }
+  if (r === 'practice') out.push(`<div class="row"><span class="grp">已進袋</span>${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`);
+  const html = out.join('');
+  if (html !== hudHtml) hudEl.innerHTML = hudHtml = html; // 只有內容變了才重畫 DOM
+  hintEl.textContent = hintText();
+  powEl.style.width = power * 100 + '%';
+  powBox.classList.toggle('max', power >= 1);
+  powMark.style.opacity = lastPower ? 0.8 : 0; powMark.style.left = lastPower * 100 + '%';
+}
+function hintText() { // 只顯示當下用得到的操作
+  if (menuOpen) return '';
+  if (state === 'replay') return '重播中（半速）';
+  if (state === 'over') return 'R 再來一局　·　P 重播　·　M 換模式';
+  if (state !== 'aim') return '';
+  if (cpuTurn()) return '電腦思考中…';
+  if (net && !net.open) return net.me === 0 ? `房號 ${net.code}・等待對手加入…（Esc 看邀請連結）` : '連線中…';
+  if (notMine()) return '對手瞄準中…';
+  return [game.breakShot ? '開球：WASD 在開球線後擺母球' : game.ballInHand && '自由球：WASD 移動母球', '按住左鍵蓄力，放開出桿', '方向鍵 打點', 'Q/E 仰角', 'Tab 按鍵說明'].filter(Boolean).join('　·　');
+}
+
+// ---- 連線對戰（PeerJS 點對點）----
+// 只傳出桿參數，兩邊各自跑同一套物理；每桿結束由出桿方送出所有球的最終位置與比賽狀態蓋過去，保證兩邊一致。
+// ponytail: 信任雙方瀏覽器（朋友對戰用），不防作弊；連不上的網路環境要加 TURN 伺服器
+let net = null, shotBy = 0, aimSent = 0;
+const netQ = [], PEER_PREFIX = 'pool3d-room-', netMsgEl = document.getElementById('netMsg');
+const notMine = () => cpuTurn() || !!(net && (!net.open || game.cur !== net.me) && !game.over);
+const send = m => net?.open && net.conn.send(m);
+const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) => {
+  const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+  sc.onload = ok; sc.onerror = bad; document.head.append(sc);
+});
+function leaveNet() { if (net) { const p = net.peer; net = null; p?.destroy(); } netQ.length = 0; }
+function sendSync(reset) {
+  send({ t: 'sync', reset, mode, b: balls.map(b => [b.x, b.z, b.active ? 1 : 0]),
+    g: { cur: game.cur, groups: game.groups, ballInHand: game.ballInHand, breakShot: game.breakShot, over: game.over } });
+}
+function applySync(m) {
+  if (m.reset) { mode = m.mode; newGame(); }
+  m.b.forEach(([x, z, a], i) => (a ? place(balls[i], x, z) : hide(balls[i])));
+  Object.assign(game, m.g); state = game.over ? 'over' : 'aim'; ai = null; // 訊息文字由本機自己的 endShot 產生（「你/對手」視角才對）
+}
+function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同步要等本機這桿的球停下來
+  while (netQ.length) {
+    const m = netQ[0], idle = state === 'aim' || state === 'over';
+    if (m.t === 'aim') { if (state === 'aim' && notMine()) { yaw = m.y; if (game.ballInHand || game.breakShot) { cueBall.x = m.x; cueBall.z = m.z; } } }
+    else if (m.t === 'shot') { if (state !== 'aim') break; cueBall.x = m.x; cueBall.z = m.z; yaw = m.y; shoot(m.p, m.tip, m.el); }
+    else if (m.t === 'sync') { if (!idle && !m.reset) break; applySync(m); }
+    netQ.shift();
+  }
+  if (net?.open && state === 'aim' && !notMine() && performance.now() - aimSent > 66) { // 每秒 15 次把瞄準方向給對手看
+    aimSent = performance.now(); send({ t: 'aim', y: yaw, x: cueBall.x, z: cueBall.z });
+  }
+}
+function setupConn(c) {
+  net.conn = c;
+  c.on('open', () => { net.open = true; netMsgEl.textContent = ''; toast('對手已連線'); if (net.me === 0) { newGame(); sendSync(true); } });
+  c.on('data', m => netQ.push(m));
+  c.on('close', () => { if (net?.conn === c) { leaveNet(); flash('對手已離線，改為本機雙人', 4); } });
+}
+async function hostRoom(r) {
+  leaveNet(); mode = r === 9 ? 3 : 1; game.ch = 0;
+  const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+  net = { me: 0, open: false, code }; newGame(); play();
+  try { await loadPeer(); } catch { leaveNet(); return flash('PeerJS 載入失敗，請檢查網路'); }
+  const peer = net.peer = new Peer(PEER_PREFIX + code);
+  peer.on('open', () => {
+    const link = location.origin + location.pathname + '?room=' + code;
+    navigator.clipboard?.writeText(link).then(() => toast('邀請連結已複製'), () => {});
+    netMsgEl.textContent = `房號 ${code}　邀請連結：${link}`;
+  });
+  peer.on('connection', c => (net.conn ? c.close() : setupConn(c)));
+  peer.on('error', e => { if (net?.open) return; leaveNet(); flash('連線錯誤：' + e.type, 4); }); // 已連上後信令伺服器斷線不影響對戰
+}
+async function joinRoom(code) {
+  code = code.trim().toUpperCase(); if (!code) return;
+  leaveNet(); net = { me: 1, open: false, code }; play();
+  try { await loadPeer(); } catch { leaveNet(); return flash('PeerJS 載入失敗，請檢查網路'); }
+  const peer = net.peer = new Peer();
+  peer.on('open', () => setupConn(peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' })));
+  peer.on('error', e => { if (net?.open) return; leaveNet(); flash(e.type === 'peer-unavailable' ? `找不到房間 ${code}` : '連線錯誤：' + e.type, 4); });
+}
+document.getElementById('online').addEventListener('click', e => {
+  const r = e.target.dataset?.r; if (r) hostRoom(+r);
+  if (e.target.id === 'join') joinRoom(document.getElementById('room').value);
+});
+{ const q = new URLSearchParams(location.search).get('room'); if (q) { document.getElementById('room').value = q; netMsgEl.textContent = `收到邀請：按「加入」進入房間 ${q.toUpperCase()}`; } }
+
+// ---- 主迴圈 ----
+const clock = new THREE.Clock(), camTarget = new THREE.Vector3(), camPos = new THREE.Vector3(), camDir = new THREE.Vector3(1, 0, 0), follow = new THREE.Vector3(), q = new THREE.Quaternion(), axis = new THREE.Vector3();
+let acc = 0;
+camera.position.set(-L - 0.8, 0.6, 0);
+function frame(_, fixedDt) {
+  const dt = fixedDt ?? Math.min(clock.getDelta(), 0.05);
+  sfxBudget = 0;
+  if (menuOpen && !fixedDt && !net) { updateRoll(false); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
+  if (state === 'moving') {
+    acc += dt; simT += dt;
+    while (acc >= STEP) { step(STEP); acc -= STEP; }
+    if (balls.every(b => !b.active || (!b.vx && !b.vz && !b.wx && !b.wz && !b.vy && !b.y))) { endShot(); if (net && shotBy === net.me) sendSync(); }
+  }
+  if (net) netTick();
+  if (state === 'stroke') { // 球桿往前送 70ms
+    stroke.t += dt;
+    if (stroke.t >= 0.07) { launch(stroke); stroke = null; }
+  }
+  // 電腦回合：先停頓、轉向目標、蓄力、出桿
+  if (state === 'aim' && cpuTurn()) {
+    if (!ai) ai = { ...aiPlan(), t: 0 };
+    ai.t += dt;
+    if (ai.t > 0.6) yaw += Math.atan2(Math.sin(ai.yaw - yaw), Math.cos(ai.yaw - yaw)) * Math.min(1, dt * 4);
+    if (ai.t > 1.8) {
+      power = Math.min(ai.power, power + dt * 0.7);
+      if (power >= ai.power) { yaw = ai.yaw; shoot(power, { x: 0, y: 0.15 }, 0.05); ai = null; }
+    }
+  }
+  // 方向鍵調整打點
+  tip.x += ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * dt * 1.5;
+  tip.y += ((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0)) * dt * 1.5;
+  elev = Math.min(1.1, Math.max(0.05, elev + ((keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0)) * dt * 0.6));
+  elevEl.textContent = `仰角 ${Math.round(elev * 180 / Math.PI)}°`;
+  const tl = Math.hypot(tip.x, tip.y); if (tl > 1) { tip.x /= tl; tip.y /= tl; }
+  tipDot.style.left = 50 + tip.x * 25 + '%'; tipDot.style.top = 50 - tip.y * 25 + '%';
+  const dx = Math.cos(yaw), dz = Math.sin(yaw);
+
+  // 自由球擺位
+  if (state === 'aim' && (game.ballInHand || game.breakShot) && !notMine()) { // 開球：只能擺在開球線 (x = -L/2) 後面
+    const f = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), r = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+    const nx = Math.max(-L + R, Math.min(game.breakShot ? -L / 2 : L - R, cueBall.x + (dx * f - dz * r) * 0.5 * dt));
+    const nz = Math.max(-W + R, Math.min(W - R, cueBall.z + (dz * f + dx * r) * 0.5 * dt));
+    if (!overlaps(nx, nz, cueBall)) { cueBall.x = nx; cueBall.z = nz; }
+  }
+  if (charging) power = Math.min(1, power + dt * 0.7);
+
+  if (state === 'replay') {
+    replay.t += dt * 0.5; // 半速
+    while (replay.i < rec.length - 1 && rec[replay.i + 1].t <= replay.t) replay.i++;
+    const f = rec[replay.i].f;
+    balls.forEach((b, i) => {
+      const o = i * 8;
+      b.mesh.position.set(f[o], f[o + 1], f[o + 2]); b.mesh.quaternion.set(f[o + 3], f[o + 4], f[o + 5], f[o + 6]); b.mesh.visible = !!f[o + 7];
+    });
+    if (replay.i >= rec.length - 1) { state = replay.prev; replay = null; balls.forEach(b => (b.mesh.visible = b.active)); }
+  } else for (const b of balls) {
+    const m = b.mesh;
+    if (b.fall) {
+      const f = b.fall; f.t += dt;
+      m.position.x += (f.x - m.position.x) * Math.min(1, dt * 12);
+      m.position.z += (f.z - m.position.z) * Math.min(1, dt * 12);
+      m.position.y = R - 4 * f.t * f.t;
+      if (f.t > 0.35) { m.visible = false; b.fall = null; }
+      continue;
+    }
+    if (!b.active) continue;
+    const w = Math.hypot(b.wx, b.wy, b.wz);
+    if (w) m.quaternion.premultiply(q.setFromAxisAngle(axis.set(b.wx / w, b.wy / w, b.wz / w), w * dt));
+    m.position.set(b.x, R + b.y, b.z);
+  }
+  if (state === 'moving') snap();
+
+  const aiming = state === 'aim' || state === 'stroke';
+  cue.visible = aiming;
+  aimLine.visible = ghost.visible = aiming && helpers;
+  if (!aiming || !helpers) objLine.visible = cueLine.visible = false;
+  if (aiming) {
+    if (helpers) updateAim(dx, dz);
+    // 球桿對準打點：往右 (-dz, dx) 與往上偏移 0.5R·tip；出桿時從拉桿位置送到桿頭碰球
+    const t = stroke ? stroke.tip : tip, pull = stroke ? stroke.p * (1 - stroke.t / 0.07) : power;
+    const { d, rt, up } = cueFrame(yaw, stroke ? stroke.elev : elev);
+    const hx = cueBall.x + 0.5 * R * (t.x * rt[0] + t.y * up[0]), hy = R + cueBall.y + 0.5 * R * t.y * up[1], hz = cueBall.z + 0.5 * R * (t.x * rt[2] + t.y * up[2]);
+    const back = Math.sqrt(R * R * (1 - 0.25 * (t.x * t.x + t.y * t.y))) + 0.002 + (stroke ? 0 : 0.01) + pull * 0.25;
+    cue.position.set(hx - d[0] * back, hy - d[1] * back, hz - d[2] * back);
+    cue.lookAt(hx + d[0], hy + d[1], hz + d[2]);
+  }
+  // 第一人稱：瞄準時鏡頭在球桿後方；出桿後鏡頭停在原地看球跑；重播時繞台慢轉
+  for (const m of lamps) m.visible = !topView;
+  if (state === 'replay') {
+    const a = 0.6 + replay.t * 0.25;
+    camPos.set(Math.cos(a) * 2.4, 1.5, Math.sin(a) * 1.6); camTarget.set(0, 0, 0);
+  } else if (topView) { camPos.set(0, 3.0, 0.001); camTarget.set(0, 0, 0); }
+  else if (aiming) {
+    camPos.set(cueBall.x - dx * dist * Math.cos(pitch), R + dist * Math.sin(pitch), cueBall.z - dz * dist * Math.cos(pitch));
+    camTarget.set(cueBall.x + dx * 0.4, R, cueBall.z + dz * 0.4);
+  } else if (state === 'moving') {
+    // 出桿後：鏡頭慢慢升高，跟著「正在動的球」的速度加權中心走（母球給一點底權重）
+    let sx = 0, sz = 0, sw = 0;
+    for (const b of balls) if (b.active) { const w = Math.hypot(b.vx, b.vz) + (b === cueBall ? 0.03 : 0); sx += b.x * w; sz += b.z * w; sw += w; }
+    if (sw > 0) follow.set(Math.max(-L, Math.min(L, sx / sw)), 0, Math.max(-W, Math.min(W, sz / sw)));
+    camTarget.copy(follow);
+    camPos.set(follow.x - camDir.x * 1.15, 1.0, follow.z - camDir.z * 1.15);
+  }
+  const k = 1 - Math.exp(-dt * (state === 'moving' ? 2 : 10));
+  camera.position.lerp(camPos, k);
+  camera.userData.t = (camera.userData.t || camTarget.clone()).lerp(camTarget, k);
+  camera.lookAt(camera.userData.t);
+  fovKick *= Math.exp(-dt * 5); // 出桿瞬間鏡頭往前衝一下再回來
+  camera.fov = FOV - fovKick; camera.updateProjectionMatrix();
+
+  if ((msgTimer -= dt) <= 0) msgEl.style.opacity = 0;
+  updateRoll(state === 'moving'); updateMarker(performance.now() / 1000);
+  if ((toastTimer -= dt) <= 0) toastEl.classList.remove('on');
+  updateHud();
+  if (!fixedDt) renderer.render(scene, camera);
+}
+renderer.setAnimationLoop(frame);
+newGame(); msgEl.style.opacity = 0;
+window.pool = { get net() { return net; }, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
+</script>
+</body>
+</html>
