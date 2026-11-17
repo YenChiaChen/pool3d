@@ -1,41 +1,44 @@
-# 3D 美式撞球
+# 3D Pool
 
-第一人稱視角的 3D 美式撞球，開瀏覽器就能玩，不用安裝。
+English | [繁體中文](README.zh-TW.md)
 
-**▶ 立即遊玩：https://yenchiachen.github.io/pool3d/**
+First-person 3D American pool that runs in the browser. Nothing to install.
 
-![遊戲畫面](docs/screenshot.jpg)
+**▶ Play now: https://yenchiachen.github.io/pool3d/**
 
-## 玩法
+![Gameplay](docs/screenshot.jpg)
 
-- **8 號球、9 號球**，含基本犯規、自由球與開球擺位
-- **對電腦**（三種難度）、**雙人同機**、**線上對戰**、**練習**
-- 加塞、高低桿、跳球、扎桿：打點與球桿仰角都會影響母球
-- 9 號球會標出下一顆該打的球（N 鍵開關）
-- 手機可玩：觸控瞄準、力道條，Android 支援全螢幕（iOS 請「加入主畫面」）
+## Features
 
-## 操作
+- **8-ball and 9-ball** with basic fouls, ball in hand, and cue ball placement on the break
+- **vs Computer** (three difficulty levels), **two players on one device**, **online**, and **practice**
+- Side spin, follow, draw, jump and masse shots: both the tip position and the cue elevation affect the cue ball
+- In 9-ball, the next ball to hit is marked (toggle with N)
+- Plays on phones: touch aiming and a power bar, fullscreen on Android (on iOS, use "Add to Home Screen")
+- English and Traditional Chinese UI. Switch in the top-right corner of the home screen, or add `?lang=en` / `?lang=zh` to the URL
 
-| 電腦 | |
+## Controls
+
+| Desktop | |
 |---|---|
-| 滑鼠 | 瞄準 / 上下調整視角 |
-| Shift + 滑鼠 | 微調瞄準 |
-| 按住左鍵 | 蓄力，放開出桿 |
-| 方向鍵 | 打點 |
-| Q / E | 球桿仰角 |
-| C | 打點與仰角歸零 |
-| W A S D | 自由球時移動母球 |
-| V / H / N / P | 俯視 / 輔助線 / 目標提示 / 重播 |
-| Esc | 暫停 / 選單 |
-| Tab | 全部按鍵 |
+| Mouse | Aim / tilt view |
+| Shift + mouse | Fine aim |
+| Hold left button | Charge, release to shoot |
+| Arrow keys | Spin |
+| Q / E | Cue elevation |
+| C | Reset spin and elevation |
+| W A S D | Move the cue ball (ball in hand) |
+| V / H / N / P | Top view / aim guides / target marker / replay |
+| Esc | Pause / menu |
+| Tab | All controls |
 
-手機：單指拖曳瞄準、雙指縮放、右側力道條往下拉蓄力、左下白球設定打點。
+On a phone: drag one finger to aim, pinch to zoom, pull the power bar on the right down to charge, and tap the cue ball at the bottom left to set spin.
 
-## 線上對戰
+## Online play
 
-開房間後把邀請連結傳給朋友，可以選搶 1、3 或 5 局。連線透過 [PeerJS](https://peerjs.com/) 點對點建立，沒有遊戲伺服器，雙方的瀏覽器直接互傳擊球資料。部分公司或校園網路會擋 P2P，這時可能連不上。
+Create a room, send the invite link to a friend, and pick single rack, race to 3, or race to 5. The connection is peer-to-peer through [PeerJS](https://peerjs.com/): there is no game server, and the two browsers send shots to each other directly. Some office or school networks block peer-to-peer connections, so it may not connect there.
 
-## 本機執行
+## Run locally
 
 ```bash
 git clone https://github.com/YenChiaChen/pool3d.git
@@ -43,19 +46,19 @@ cd pool3d
 python3 -m http.server 8000
 ```
 
-開 http://localhost:8000 就能玩。整個遊戲只有一個 `index.html`，three.js 與 PeerJS 從 CDN 載入，不用 build。
+Then open http://localhost:8000. The whole game is one `index.html`; three.js and PeerJS load from a CDN, so there is no build step.
 
-## 技術
+## Tech
 
-- [three.js](https://threejs.org/) 負責繪圖，物理是自己寫的（1 ms 步進的球、庫邊、袋口碰撞）
-- 球桌的布面與木紋用程式產生，不用圖檔
-- 音效以 Web Audio 播放，載入失敗時改用即時合成的聲音
+- [three.js](https://threejs.org/) for rendering; the physics is hand-written (1 ms steps for ball, cushion and pocket collisions)
+- The cloth and wood textures are generated in code, with no image files
+- Sound plays through Web Audio, with synthesized sounds as a fallback if the samples fail to load
 
-## 致謝
+## Credits
 
 - 99% by Claude Code ^^ 1% is me paying the sub
-- 擊球音效取自 [tailuge/billiards](https://github.com/tailuge/billiards)（GPL-3.0），執行時從 CDN 載入，不包含在本 repo 中
+- Hit sounds come from [tailuge/billiards](https://github.com/tailuge/billiards) (GPL-3.0). They load from a CDN at runtime and are not included in this repo
 
 ## License
 
-[MIT](LICENSE)。上面提到的音效檔不在 MIT 授權範圍內，依其原本的 GPL-3.0 授權。
+[MIT](LICENSE). The sound files mentioned above are not covered by MIT; they keep their original GPL-3.0 license.

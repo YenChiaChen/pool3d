@@ -385,7 +385,7 @@ body.touch .cSteps{display:none}
 </div></div>
 
 <div id="home" class="scr"><div class="wrap">
-  <header class="top"><div class="brand">POOL·3D</div><div class="tbtns"><button class="pill" data-open="help">操作說明</button><button class="pill" data-open="settings">設定</button></div></header>
+  <header class="top"><div class="brand">POOL·3D</div><div class="tbtns"><button class="pill" id="langBtn"></button><button class="pill" data-open="help">操作說明</button><button class="pill" data-open="settings">設定</button></div></header>
   <div class="homeGrid">
     <div class="homeL">
       <div><h1>3D 美式撞球</h1><p>跟誰打？</p><p id="iosTip" class="lbl" hidden>iPhone：點 Safari 的「分享」→「加入主畫面」，從主畫面開啟就是全螢幕。</p></div>
@@ -477,6 +477,42 @@ body.touch .cSteps{display:none}
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---- 語言：?lang=en|zh > 上次選的 > 瀏覽器語言。中文寫在原處，英文用 T(中, 英) 或下面的 DICT（給 HTML 靜態文字） ----
+const LANG = (() => { const q = new URLSearchParams(location.search).get('lang'); if (q) return q === 'zh' ? 'zh' : 'en'; try { const v = localStorage.getItem('pool-lang'); if (v) return v; } catch {} return /^zh/i.test(navigator.language) ? 'zh' : 'en'; })();
+const EN = LANG === 'en', T = (zh, en) => (EN ? en : zh);
+const wins = n => (n === 'You' ? 'You win' : n + ' wins');
+const gName = g => T(g, { 全色: 'solids', 花色: 'stripes' }[g] || g);
+const DICT = {
+  '全螢幕': 'Fullscreen', '俯視': 'Top view', '暫停': 'Pause', '犯規': 'Foul', '打點': 'Spin', '中心': 'Center', '仰角': 'Elevation',
+  '←↑→↓ 打點 · Q/E 仰角 · C 歸零': '←↑→↓ spin · Q/E elevation · C reset', '力道': 'Power', '輔助線': 'Guides', '重播上一桿': 'Replay', '全部按鍵': 'All keys',
+  '下拉': 'Pull', '蓄力': 'down', '移動母球': 'Move cue ball', '微調瞄準': 'Fine aim', '把手機橫放，視野會更寬。': 'Turn your phone sideways for a wider view.', '知道了': 'Got it',
+  '拖曳紅點：上＝高桿（跟進）、下＝低桿（拉回）、左右＝塞球': 'Drag the red dot: up = follow, down = draw, left/right = side spin', '球桿仰角': 'Cue elevation',
+  '歸零': 'Reset', '完成': 'Done', '略過教學': 'Skip tutorial', '下一步': 'Next', '重播最後一桿': 'Replay last shot', '回主選單': 'Main menu', '再來一場': 'Play again',
+  '操作說明': 'Controls', '設定': 'Settings', '3D 美式撞球': '3D Pool', '跟誰打？': 'Who are you playing?',
+  'iPhone：點 Safari 的「分享」→「加入主畫面」，從主畫面開啟就是全螢幕。': 'iPhone: tap Share in Safari → "Add to Home Screen", then open it from the home screen to play fullscreen.',
+  '對電腦': 'vs Computer', '單人・挑戰 AI': 'Solo against the AI', '雙人同機': 'Two players', '同一台裝置輪流擊球': 'Take turns on one device',
+  '線上對戰': 'Online', '開房間，傳連結給朋友': 'Open a room, send a friend the link', '練習': 'Practice', '無規則・隨時自由擺球': 'No rules, place the cue ball anytime',
+  '規則': 'Rules', '8 號球': '8-ball', '分全色／花色，最後打 8 號': 'Solids or stripes, then the 8', '9 號球': '9-ball', '先碰最小號，打進 9 號贏': 'Hit the lowest first, pot the 9 to win',
+  '電腦難度': 'Difficulty', '輕鬆': 'Easy', '普通': 'Normal', '困難': 'Hard', '賽制': 'Format', '單局': 'Single rack', '搶 3': 'Race to 3', '搶 5': 'Race to 5',
+  '開始': 'Start', '建立房間': 'Create room', '用房號加入': 'Join with code', '繼續目前這局': 'Resume game',
+  '建立房間後會得到一組 4 碼房號和邀請連結。': 'Creating a room gives you a 4-character code and an invite link.', '房號': 'Room code',
+  '把連結傳給朋友，打開就會自動加入。也可以直接告訴對方房號。': 'Send the link to a friend; opening it joins the room. You can also just tell them the code.',
+  '複製邀請連結': 'Copy invite link', '輸入 4 碼房號': 'Enter the 4-character code', '加入': 'Join', '或直接打開朋友傳來的邀請連結。': 'Or just open the invite link your friend sent.',
+  '玩家': 'Players', '離開房間': 'Leave room', '重新連線': 'Reconnect', '開始對戰': 'Start match', '已暫停': 'Paused', '繼續': 'Resume', '重新開這一局': 'Restart rack',
+  '房間與邀請連結': 'Room & invite link', '離開到主選單': 'Quit to menu', '台面狀態': 'Table', '遊戲': 'Game', '操作': 'Controls', '音效': 'Sound', '按鍵一覽': 'Keys',
+  '瞄準輔助': 'Aiming aids', '瞄準線與影子球': 'Aim line and ghost ball', '母球路徑與碰撞位置 · H': 'Cue ball path and contact point · H',
+  '目標球與母球走向': 'Object and cue ball paths', '撞擊後兩顆球的預測方向': 'Predicted directions of both balls after contact',
+  '9 號球目標提示': '9-ball target marker', '在下一顆該打的球上顯示號碼 · N': 'Show the number above the next ball to hit · N', '擊球': 'Shooting',
+  '每桿打完打點歸零': 'Reset spin after each shot', '關閉則保留上一桿的打點與仰角': "When off, the last shot's spin and elevation are kept",
+  '瞄準靈敏度（滑鼠與觸控拖曳）': 'Aim sensitivity (mouse and touch)', '新手教學': 'Tutorial', '下一局重看教學': 'Show tutorial next game', '音量': 'Volume',
+};
+if (EN) {
+  document.documentElement.lang = 'en'; document.title = DICT[document.title] || document.title;
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n; (n = w.nextNode());) { const k = n.nodeValue.trim(); if (DICT[k]) n.nodeValue = n.nodeValue.replace(k, DICT[k]); }
+}
+{ const b = document.getElementById('langBtn'); b.textContent = EN ? '中文' : 'English'; b.addEventListener('click', () => { try { localStorage.setItem('pool-lang', EN ? 'zh' : 'en'); } catch {} location.href = location.pathname; }); }
 
 // ---- 真實尺寸 (公尺)：9 呎球台，球徑 57.15mm ----
 const R = 0.028575, L = 1.27, W = 0.635;
@@ -831,7 +867,6 @@ function step(dt) {
 }
 
 // ---- 模式與規則 ----
-const MODES = ['8 號球・對電腦', '8 號球・雙人', '9 號球・對電腦', '9 號球・雙人', '練習'];
 let mode = 0;
 const cfg = { opp: 'cpu', game: 8, race: 3, diff: 1 };
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('pool-cfg') || '{}')); } catch {}
@@ -839,7 +874,7 @@ const modeFromCfg = () => cfg.opp === 'practice' ? 4 : (cfg.game === 9 ? 2 : 0) 
 const rules = () => mode < 2 ? 8 : mode < 4 ? 9 : 'practice';
 const cpuMode = () => mode === 0 || mode === 2;
 const cpuTurn = () => cpuMode() && game.cur === 1 && !game.over;
-const nameOf = i => net ? (i === net.me ? '你' : '對手') : cpuMode() ? (i ? '電腦' : '你') : `玩家 ${i + 1}`;
+const nameOf = i => net ? (i === net.me ? T('你', 'You') : T('對手', 'Opponent')) : cpuMode() ? (i ? T('電腦', 'Computer') : T('你', 'You')) : T(`玩家 ${i + 1}`, `Player ${i + 1}`);
 const groupOf = n => n < 8 ? '全色' : n > 8 ? '花色' : '8';
 const remaining = g => balls.filter(b => b.active && b.n && groupOf(b.n) === g).length;
 const lowest = () => Math.min(...balls.filter(b => b.active && b.n).map(b => b.n));
@@ -872,7 +907,7 @@ function newGame() {
   if (r === 9) rack9(); else rack8();
   state = 'aim'; ai = null; rec = []; result = null; lastPower = 0;
   hideMsg();
-  flash(r === 'practice' ? '練習模式 · 母球可隨時自由擺放' : `第 ${match.rack + 1} 局 · ${nameOf(game.cur)} 開球`);
+  flash(r === 'practice' ? T('練習模式 · 母球可隨時自由擺放', 'Practice · place the cue ball anytime') : T(`第 ${match.rack + 1} 局 · ${nameOf(game.cur)} 開球`, `Rack ${match.rack + 1} · Break: ${nameOf(game.cur)}`));
 }
 function respawnCue() {
   let x = -L / 2;
@@ -884,7 +919,7 @@ function gameOver(text, winner) {
   const p = game.cur, s = match.st[p];
   if (shot && s) { s.pots += shot.potted.length; if (winner === p) { s.run += shot.potted.length; s.best = Math.max(s.best, s.run); } else s.fouls++; } // 8 號球提前／犯規落袋也算一次犯規
   if (winner != null) { match.score[winner]++; match.hist.push(winner); }
-  const reason = rules() === 9 ? '打進 9 號球' : winner === p ? '8 號球落袋' : `${nameOf(p)} 提前或犯規打進 8 號`;
+  const reason = rules() === 9 ? T('打進 9 號球', '9-ball potted') : winner === p ? T('8 號球落袋', '8-ball potted') : T(`${nameOf(p)} 提前或犯規打進 8 號`, `${nameOf(p)}: 8-ball potted early or on a foul`);
   showResult(reason, winner);
 }
 function endShot() {
@@ -902,7 +937,7 @@ function end8() {
   const foul = shot.scratch || !legalFirst;
   if (pots.includes(8)) {
     const win = shot.onEight && !foul;
-    return gameOver(`${nameOf(win ? p : 1 - p)} 獲勝！${win ? '' : '（8 號球提前或犯規落袋）'}`, win ? p : 1 - p);
+    return gameOver(T(`${nameOf(win ? p : 1 - p)} 獲勝！${win ? '' : '（8 號球提前或犯規落袋）'}`, `${wins(nameOf(win ? p : 1 - p))}!${win ? '' : ' (8-ball potted early or on a foul)'}`), win ? p : 1 - p);
   }
   if (!g && pots[0] && !foul) { game.groups[p] = groupOf(pots[0]); game.groups[1 - p] = groupOf(pots[0]) === '全色' ? '花色' : '全色'; }
   const mine = game.groups[p];
@@ -913,7 +948,7 @@ function end9() {
   const p = game.cur;
   const foul = shot.scratch || shot.firstHit !== shot.lowest;
   if (shot.potted.includes(9)) {
-    if (!foul) return gameOver(`${nameOf(p)} 打進 9 號球獲勝！`, p);
+    if (!foul) return gameOver(T(`${nameOf(p)} 打進 9 號球獲勝！`, `${wins(nameOf(p))} with the 9!`), p);
     let x = L / 2; while (overlaps(x, 0, balls[9])) x += 2.1 * R;
     place(balls[9], x, 0); // 犯規打進 9 號：放回置球點
   }
@@ -926,11 +961,11 @@ function turnResult(foul, keep) {
   game.ballInHand = foul;
   const nm = nameOf(game.cur);
   if (foul) {
-    const why = shot.scratch ? '母球落袋' : shot.firstHit == null ? '母球沒有碰到任何球' : `先碰到 ${shot.firstHit} 號球（${rules() === 9 ? `應先碰 ${shot.lowest} 號` : '不是合法目標球'}）`;
-    showFoul(why, `換 ${nm} 擊球 · 自由球`, `${nm === '你' ? '你' : nm}可以把母球擺在台面任何位置${isTouch ? '（點「移動母球」後拖曳）' : '（WASD 移動）'}。${rules() === 9 && shot.potted.includes(9) ? '9 號球已放回置球點。' : ''}`);
+    const why = shot.scratch ? T('母球落袋', 'Scratch') : shot.firstHit == null ? T('母球沒有碰到任何球', 'Cue ball hit nothing') : T(`先碰到 ${shot.firstHit} 號球（${rules() === 9 ? `應先碰 ${shot.lowest} 號` : '不是合法目標球'}）`, `Hit the ${shot.firstHit} first (${rules() === 9 ? `must hit the ${shot.lowest}` : 'not a legal target'})`);
+    showFoul(why, T(`換 ${nm} 擊球 · 自由球`, `Turn: ${nm} · ball in hand`), EN ? `${nm} can place the cue ball anywhere on the table${isTouch ? ' (tap "Move cue ball", then drag)' : ' (move it with WASD)'}.${rules() === 9 && shot.potted.includes(9) ? ' The 9 is respotted.' : ''}` : `${nm}可以把母球擺在台面任何位置${isTouch ? '（點「移動母球」後拖曳）' : '（WASD 移動）'}。${rules() === 9 && shot.potted.includes(9) ? '9 號球已放回置球點。' : ''}`);
   } else {
     const grpNew = rules() === 8 && !shot.grp && game.groups[p];
-    flash(grpNew ? `分組確定 · ${nameOf(p)} 打${game.groups[p]}${keep ? '，繼續擊球' : ''}` : keep ? `${nm} 繼續擊球` : `換 ${nm} 擊球`);
+    flash(grpNew ? T(`分組確定 · ${nameOf(p)} 打${game.groups[p]}${keep ? '，繼續擊球' : ''}`, `Groups set · ${nameOf(p)}: ${gName(game.groups[p])}${keep ? ', shoot again' : ''}`) : keep ? T(`${nm} 繼續擊球`, `Turn: ${nm} (again)`) : T(`換 ${nm} 擊球`, `Turn: ${nm}`));
   }
 }
 
@@ -1022,12 +1057,13 @@ master.gain.value = settings.vol; helpers = settings.aim;
 
 let menuOpen = true, started = false, screen = 'home', dlg = null, passiveHelp = false;
 let touchPow = false, moveMode = false, fine = false, aimMoved = 0;
-const OPP = { cpu: '對電腦', local: '雙人同機', online: '線上對戰', practice: '練習' }, DIFF = ['輕鬆', '普通', '困難'];
+const OPP = { cpu: T('對電腦', 'vs Computer'), local: T('雙人同機', 'Two players'), online: T('線上對戰', 'Online'), practice: T('練習', 'Practice') }, DIFF = [T('輕鬆', 'Easy'), T('普通', 'Normal'), T('困難', 'Hard')];
+const gameLabel = r => T(`${r} 號球`, `${r}-ball`), raceLabel = n => (n > 1 ? T(`搶 ${n} 局`, `race to ${n}`) : T('單局', 'single rack'));
 function modeLabel() {
   const r = rules();
-  if (net) return `線上對戰 · ${r} 號球`;
-  if (r === 'practice') return '練習';
-  return `${r} 號球 · ${cpuMode() ? '對電腦 · ' + DIFF[cfg.diff] : '雙人同機'}`;
+  if (net) return `${OPP.online} · ${gameLabel(r)}`;
+  if (r === 'practice') return OPP.practice;
+  return `${gameLabel(r)} · ${cpuMode() ? OPP.cpu + ' · ' + DIFF[cfg.diff] : OPP.local}`;
 }
 function newSt() { return { pots: 0, fouls: 0, run: 0, best: 0 }; }
 function resetMatch(race = match.race) { Object.assign(match, { race, score: [0, 0], rack: 0, hist: [], st: [newSt(), newSt()] }); }
@@ -1104,7 +1140,7 @@ function renderHome() {
   const o = cfg.opp;
   $('cfgTitle').textContent = OPP[o];
   $('fRules').hidden = o === 'practice'; $('fDiff').hidden = o !== 'cpu'; $('fRace').hidden = o === 'practice';
-  $('cfgNote').textContent = { cpu: '', local: '兩位玩家在同一台裝置輪流擊球，開球權每局輪替。', online: '建立房間會產生邀請連結；有房號就直接加入。', practice: '沒有規則與勝負，母球隨時可以自由擺放。' }[o];
+  $('cfgNote').textContent = { cpu: '', local: T('兩位玩家在同一台裝置輪流擊球，開球權每局輪替。', 'Two players take turns on one device; the break alternates each rack.'), online: T('建立房間會產生邀請連結；有房號就直接加入。', 'Creating a room gives you an invite link; have a code? Join directly.'), practice: T('沒有規則與勝負，母球隨時可以自由擺放。', 'No rules or winner; place the cue ball anytime.') }[o];
   $('startBtn').hidden = o === 'online'; $('onBtns').hidden = o !== 'online';
   $('resumeCard').hidden = !started || !!net;
   if (started && !net) $('resumeSub').textContent = modeLabel() + (rules() !== 'practice' ? ` · ${match.score[0]}–${match.score[1]}` : '');
@@ -1141,12 +1177,17 @@ for (const [id, apply, fmt] of [['vol', v => (master.gain.value = v), v => Math.
   el.addEventListener('input', () => { settings[id] = +el.value; apply(+el.value); out.textContent = fmt(+el.value); saveSettings(); });
 }
 $('setNav').addEventListener('click', e => { const t = e.target.closest('[data-st]')?.dataset.st; if (!t) return; document.querySelectorAll('#settings [data-st]').forEach(x => x.classList.toggle('on', x.dataset.st === t)); });
-$('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSettings(); $('tutReset').textContent = '已設定，下次開局會顯示'; });
+$('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSettings(); $('tutReset').textContent = T('已設定，下次開局會顯示', 'Done, it shows next game'); });
 
-const KEYS = [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
+const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Arrow keys', 'Spin (follow, draw, side)'],
+  ['Q / E', 'Cue elevation (jump, masse)'], ['C', 'Reset spin and elevation'], ['Wheel', 'Zoom'], ['W A S D', 'Move cue ball (ball in hand)'], ['V', 'Top view'],
+  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Tab', 'Show / hide controls']];
+const TOUCH_EN = [['One-finger drag', 'Aim left/right, tilt view up/down'], ['Pinch', 'Zoom'], ['Power bar (right)', 'Pull down to charge, release to shoot; push back to the top to cancel'], ['Cue ball (bottom left)', 'Set spin and cue elevation'],
+  ['Move cue ball', 'Turn on with ball in hand, then drag to place'], ['Fine aim', 'Lower drag sensitivity for precise aiming'], ['Top-right buttons', 'Top view / pause']];
+const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
   ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明']];
-const TOUCH = [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
+const TOUCH = EN ? TOUCH_EN : [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
   ['移動母球', '自由球時開啟，拖曳擺放母球'], ['微調瞄準', '降低拖曳靈敏度，方便對準'], ['右上按鈕', '俯視 / 暫停']];
 const keysHtml = list => list.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('');
 $('keysA').innerHTML = $('keysB').innerHTML = keysHtml(KEYS); $('keysT').innerHTML = keysHtml(TOUCH);
@@ -1179,8 +1220,8 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyV') { topView = !topView; coachEvent('view'); }
   if (e.code === 'KeyR') nextRack();
   if (e.code === 'KeyC') { tip.x = tip.y = 0; elev = 0.05; }
-  if (e.code === 'KeyH') { settings.aim = helpers = !settings.aim; saveSettings(); refreshToggles(); flash(helpers ? '瞄準輔助線：開' : '瞄準輔助線：關', 1.2); }
-  if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); refreshToggles(); flash(settings.mark ? '目標提示：開' : '目標提示：關', 1.2); }
+  if (e.code === 'KeyH') { settings.aim = helpers = !settings.aim; saveSettings(); refreshToggles(); flash(helpers ? T('瞄準輔助線：開', 'Aim guides: on') : T('瞄準輔助線：關', 'Aim guides: off'), 1.2); }
+  if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); refreshToggles(); flash(settings.mark ? T('目標提示：開', 'Target marker: on') : T('目標提示：關', 'Target marker: off'), 1.2); }
   if (e.code === 'KeyP') startReplay();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -1243,6 +1284,12 @@ const COACH = [
   { k: 'shoot', t: '蓄力出桿', d: '按住滑鼠左鍵蓄力，放開就出桿。力道條上的白線是上一桿的力道。試著打一桿。', m: '按住右側力道條往下拉蓄力，放手出桿；拉回頂端可以取消。試著打一桿。', fd: '#power', ft: '#tpow' },
   { k: 'view', t: '視角與暫停', d: 'V 切換俯視、P 重播上一桿、Esc 暫停、Tab 隨時查看全部按鍵。', m: '右上角可以切換俯視與暫停。暫停選單裡有完整操作說明。', fd: '#keyHints', ft: '#topR' },
 ];
+if (EN) [
+
+  { t: 'Aim', d: 'Move the mouse left/right to aim, up/down to tilt the view. Hold Shift for fine aim.', m: 'Drag one finger on the table left/right to aim, up/down to tilt the view; pinch to zoom.' },
+  { t: 'Spin and elevation', d: 'Arrow keys move the red dot on the cue ball (bottom left): up = follow, down = draw, left/right = side spin. Q / E change cue elevation.', m: 'Tap the cue ball at the bottom left and drag the red dot: up = follow, down = draw, left/right = side spin.' },
+  { t: 'Shoot', d: 'Hold the left mouse button to charge, release to shoot. The white line on the power bar marks your last shot. Try one now.', m: 'Pull the power bar on the right down to charge and let go to shoot; push it back to the top to cancel. Try one now.' },
+  { t: 'View and pause', d: 'V toggles top view, P replays the last shot, Esc pauses, Tab shows all controls anytime.', m: 'The top-right buttons switch to top view and pause. The pause menu has the full controls list.' }].forEach((c, i) => Object.assign(COACH[i], c));
 let coachI = -1;
 function coachStart() { coachI = 0; renderCoach(); }
 function coachEvent(k) { if (coachI >= 0 && COACH[coachI]?.k === k) { coachI++; renderCoach(); } }
@@ -1256,7 +1303,7 @@ function renderCoach() {
   $('cNum').textContent = `${coachI + 1} / ${COACH.length}`;
   $('cDots').innerHTML = COACH.map((_, i) => `<i class="${i <= coachI ? 'on' : ''}"></i>`).join('');
   $('cTitle').textContent = c.t; $('cText').textContent = isTouch ? c.m : c.d;
-  $('cNext').innerHTML = (last ? '完成' : '下一步') + (isTouch ? '' : '<kbd>ENTER</kbd>');
+  $('cNext').innerHTML = (last ? T('完成', 'Done') : T('下一步', 'Next')) + (isTouch ? '' : '<kbd>ENTER</kbd>');
   $('cSteps').innerHTML = COACH.map((s, i) => `<div class="${i < coachI ? 'done' : i === coachI ? 'cur' : ''}"><i>${i < coachI ? '✓' : ''}</i>${s.t}</div>`).join('');
   const f = isTouch ? c.ft : c.fd; if (f) $(f.slice(1))?.classList.add('coachFocus');
 }
@@ -1381,41 +1428,41 @@ function addPot(n, text) {
   setTimeout(() => el.classList.add('out'), 1800); setTimeout(() => el.remove(), 2300);
 }
 function toast(t) { addPot(null, t); }
-function potToast(n) { addPot(n, n ? `${n} 號進袋` : '母球落袋'); }
+function potToast(n) { addPot(n, n ? T(`${n} 號進袋`, `${n} potted`) : T('母球落袋', 'Scratch')); }
 
 function boardHtml() {
   const r = rules();
-  if (r === 'practice') return `<div class="pl one"><div class="plh"><span class="nm">練習</span><span class="grp">已進袋 ${range(1, 15).filter(potted).length} / 15</span><span class="rem">${range(1, 15).filter(potted).length}/15</span></div><div class="chips">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div></div>`;
+  if (r === 'practice') return `<div class="pl one"><div class="plh"><span class="nm">${OPP.practice}</span><span class="grp">${T('已進袋', 'Potted')} ${range(1, 15).filter(potted).length} / 15</span><span class="rem">${range(1, 15).filter(potted).length}/15</span></div><div class="chips">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div></div>`;
   const pl = i => {
     const cur = game.cur === i && !game.over, g = r === 8 ? game.groups[i] : null;
     let chips = '', rem = '';
     if (g) {
       const nums = groupNums(g), left = nums.filter(n => !potted(n)).length;
       chips = nums.map(n => chip(n, potted(n))).join('') + '<span class="sep"></span>' + chip(8, potted(8), !left && !potted(8));
-      rem = left ? `剩${left}` : '打8號';
+      rem = left ? T(`剩${left}`, `${left} left`) : T('打8號', 'On the 8');
     }
-    const st = cur ? (cpuTurn() ? '思考中' : net && notMine() ? '瞄準中' : nameOf(i) === '你' ? '你的回合' : '擊球中') : '';
-    return `<div class="pl${cur ? ' cur' : ''}"><div class="plh"><span class="nm">${nameOf(i)}</span><span class="grp">${r === 8 ? g || '未分組' : ''}</span><span class="rem">${rem}</span>${st ? `<span class="stt">● ${st}</span>` : ''}</div>${chips ? `<div class="chips">${chips}</div>` : ''}</div>`;
+    const st = cur ? (cpuTurn() ? T('思考中', 'Thinking') : net && notMine() ? T('瞄準中', 'Aiming') : nameOf(i) === T('你', 'You') ? T('你的回合', 'Your turn') : T('擊球中', 'Shooting')) : '';
+    return `<div class="pl${cur ? ' cur' : ''}"><div class="plh"><span class="nm">${nameOf(i)}</span><span class="grp">${r === 8 ? (g ? gName(g) : T('未分組', 'Open table')) : ''}</span><span class="rem">${rem}</span>${st ? `<span class="stt">● ${st}</span>` : ''}</div>${chips ? `<div class="chips">${chips}</div>` : ''}</div>`;
   };
-  const sc = `<div class="sc"><b>${match.score[0]}<i>:</i>${match.score[1]}</b><small>${match.race > 1 ? `搶${match.race} · ` : ''}第${match.rack + 1}局</small></div>`;
+  const sc = `<div class="sc"><b>${match.score[0]}<i>:</i>${match.score[1]}</b><small>${match.race > 1 ? T(`搶${match.race} · `, `Race to ${match.race} · `) : ''}${T(`第${match.rack + 1}局`, `Rack ${match.rack + 1}`)}</small></div>`;
   const row9 = r === 9 ? `<div class="row9">${range(1, 9).map(n => chip(n, potted(n), n === lowest())).join('')}</div>` : '';
   return pl(0) + sc + pl(1) + row9;
 }
 function tipName() {
-  const v = tip.y > 0.25 ? '高桿' : tip.y < -0.25 ? '低桿' : '', h = tip.x > 0.25 ? '右塞' : tip.x < -0.25 ? '左塞' : '';
-  return [v, h].filter(Boolean).join(' · ') || '中心';
+  const v = tip.y > 0.25 ? T('高桿', 'Follow') : tip.y < -0.25 ? T('低桿', 'Draw') : '', h = tip.x > 0.25 ? T('右塞', 'Right') : tip.x < -0.25 ? T('左塞', 'Left') : '';
+  return [v, h].filter(Boolean).join(' · ') || T('中心', 'Center');
 }
 function hintText() {
   if (menuOpen || state === 'over') return '';
-  if (state === 'replay') return '重播中（半速）';
+  if (state === 'replay') return T('重播中（半速）', 'Replay (half speed)');
   if (state !== 'aim') return '';
-  if (cpuTurn()) return '電腦思考中…';
-  if (net && !net.open) return '連線中斷 · 打開選單查看房間';
-  if (notMine()) return '對手瞄準中…';
-  if (!isTouch && !locked()) return '點擊球台開始瞄準';
-  if (game.breakShot) return isTouch ? '開球 · 可點「移動母球」在開球線後擺位' : '開球 · WASD 在開球線後擺母球';
-  if (game.ballInHand) return isTouch ? '自由球 · 點「移動母球」後拖曳擺位' : '自由球 · WASD 移動母球';
-  return isTouch ? '' : '按住左鍵蓄力，放開出桿';
+  if (cpuTurn()) return T('電腦思考中…', 'Computer is thinking…');
+  if (net && !net.open) return T('連線中斷 · 打開選單查看房間', 'Disconnected · open the menu to see the room');
+  if (notMine()) return T('對手瞄準中…', 'Opponent is aiming…');
+  if (!isTouch && !locked()) return T('點擊球台開始瞄準', 'Click the table to start aiming');
+  if (game.breakShot) return isTouch ? T('開球 · 可點「移動母球」在開球線後擺位', 'Break · tap "Move cue ball" to place it behind the line') : T('開球 · WASD 在開球線後擺母球', 'Break · WASD places the cue ball behind the line');
+  if (game.ballInHand) return isTouch ? T('自由球 · 點「移動母球」後拖曳擺位', 'Ball in hand · tap "Move cue ball", then drag') : T('自由球 · WASD 移動母球', 'Ball in hand · move the cue ball with WASD');
+  return isTouch ? '' : T('按住左鍵蓄力，放開出桿', 'Hold the left button to charge, release to shoot');
 }
 function updateHud() {
   const b = boardHtml(); if (b !== boardCache) $('board').innerHTML = boardCache = b;
@@ -1426,7 +1473,7 @@ function updateHud() {
   const pct = Math.round(power * 100) + '%';
   $('powFill').style.width = pct; $t('powVal', pct); $('power').classList.toggle('max', power >= 1);
   $('powLast').style.opacity = lastPower ? 0.7 : 0; $('powLast').style.left = lastPower * 100 + '%';
-  $t('lastLab', lastPower ? `上一桿 ${Math.round(lastPower * 100)}%` : '');
+  $t('lastLab', lastPower ? `${T('上一桿', 'Last')} ${Math.round(lastPower * 100)}%` : '');
   $('tpowFill').style.height = pct; $('tpowKnob').style.top = pct; $t('tpowVal', pct); $('tpow').classList.toggle('max', power >= 1);
   $t('hint', hintText());
   const mine = state === 'aim' && !notMine(), cp = mine && (game.ballInHand || game.breakShot);
@@ -1440,38 +1487,38 @@ function updateHud() {
 }
 function tableHtml() {
   const r = rules();
-  if (r === 'practice') return `<div class="trow"><span>已進袋</span><span class="mono">${range(1, 15).filter(potted).length} / 15</span></div><div class="chips lg">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`;
-  if (r === 9) return `<div class="trow"><span>下一顆：${lowest()} 號</span><span class="mono">剩 ${range(1, 9).filter(n => !potted(n)).length}</span></div><div class="chips lg">${range(1, 9).map(n => chip(n, potted(n), n === lowest())).join('')}</div>`;
+  if (r === 'practice') return `<div class="trow"><span>${T('已進袋', 'Potted')}</span><span class="mono">${range(1, 15).filter(potted).length} / 15</span></div><div class="chips lg">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`;
+  if (r === 9) return `<div class="trow"><span>${T(`下一顆：${lowest()} 號`, `Next: ${lowest()}`)}</span><span class="mono">${T('剩', 'Left:')} ${range(1, 9).filter(n => !potted(n)).length}</span></div><div class="chips lg">${range(1, 9).map(n => chip(n, potted(n), n === lowest())).join('')}</div>`;
   return [0, 1].map(i => {
     const g = game.groups[i];
-    if (!g) return `<div class="trow"><span>${nameOf(i)} · 未分組</span></div>`;
+    if (!g) return `<div class="trow"><span>${nameOf(i)} · ${T('未分組', 'open table')}</span></div>`;
     const nums = groupNums(g);
-    return `<div class="trow"><span>${nameOf(i)} · ${g}</span><span class="mono">剩 ${nums.filter(n => !potted(n)).length}</span></div><div class="chips lg">${nums.map(n => chip(n, potted(n))).join('')}</div>`;
+    return `<div class="trow"><span>${nameOf(i)} · ${gName(g)}</span><span class="mono">${T('剩', 'Left:')} ${nums.filter(n => !potted(n)).length}</span></div><div class="chips lg">${nums.map(n => chip(n, potted(n))).join('')}</div>`;
   }).join('<hr>');
 }
 function renderPause() {
   if (screen !== 'pause') return;
   const r = rules();
-  $t('pEyebrow', net ? '選單 · 連線對戰不會暫停' : '已暫停');
-  $t('pTitle', r === 'practice' ? '練習' : `第 ${match.rack + 1} 局 · ${match.score[0]} : ${match.score[1]}`);
-  $t('pSub', `${modeLabel()} · ${game.over ? '本局已結束' : '輪到 ' + nameOf(game.cur)}`);
-  $('pRestart').hidden = !!net; $('pRoom').hidden = !net; $t('pQuit', net ? '離開對戰' : '離開到主選單');
+  $t('pEyebrow', net ? T('選單 · 連線對戰不會暫停', 'Menu · online games do not pause') : T('已暫停', 'Paused'));
+  $t('pTitle', r === 'practice' ? OPP.practice : `${T(`第 ${match.rack + 1} 局`, `Rack ${match.rack + 1}`)} · ${match.score[0]} : ${match.score[1]}`);
+  $t('pSub', `${modeLabel()} · ${game.over ? T('本局已結束', 'Rack over') : T('輪到 ', 'Turn: ') + nameOf(game.cur)}`);
+  $('pRestart').hidden = !!net; $('pRoom').hidden = !net; $t('pQuit', net ? T('離開對戰', 'Leave match') : T('離開到主選單', 'Quit to menu'));
   const t = tableHtml(); if (t !== tableCache) $('pTable').innerHTML = tableCache = t;
 }
 function showResult(reason, w) {
   result = { reason, w };
   const done = matchDone(), me = net ? net.me : 0, nm = nameOf(w), sp = /\d$/.test(nm) ? ' ' : '';
-  $t('resEyebrow', `第 ${match.hist.length} 局 · ${reason}`);
-  $t('resTitle', done ? `${nm}${sp}贏得比賽` : `${nm}${sp}拿下這局`);
-  for (const i of [0, 1]) { $t('resN' + i, nameOf(i)); $t('resG' + i, rules() === 8 ? game.groups[i] || '' : ''); }
+  $t('resEyebrow', `${T(`第 ${match.hist.length} 局`, `Rack ${match.hist.length}`)} · ${reason}`);
+  $t('resTitle', EN ? `${wins(nm)} ${done ? 'the match' : 'the rack'}` : done ? `${nm}${sp}贏得比賽` : `${nm}${sp}拿下這局`);
+  for (const i of [0, 1]) { $t('resN' + i, nameOf(i)); $t('resG' + i, rules() === 8 ? gName(game.groups[i] || '') : ''); }
   $('resScore').innerHTML = `${match.score[0]}<i>:</i>${match.score[1]}`;
   $('resRacks').innerHTML = match.race > 1 ? match.hist.map((x, i) => `<div><i class="${x === me ? 'w' : ''}"></i><small>${i + 1}</small></div>`).join('') : '';
   const st = match.st, row = (l, k) => `<div class="srow"><span>${l}</span><span>${st[0][k]}</span><span>${st[1][k]}</span></div>`;
-  $('resStats').innerHTML = `<div class="srow h"><span>${done ? '整場' : '目前'}</span><span>${nameOf(0)}</span><span>${nameOf(1)}</span></div>${row('進球', 'pots')}${row('最長連桿', 'best')}${row('犯規', 'fouls')}`;
-  $('resNext').firstChild.textContent = done ? '再來一場' : '下一局';
+  $('resStats').innerHTML = `<div class="srow h"><span>${done ? T('整場', 'Match') : T('目前', 'So far')}</span><span>${nameOf(0)}</span><span>${nameOf(1)}</span></div>${row(T('進球', 'Balls potted'), 'pots')}${row(T('最長連桿', 'Longest run'), 'best')}${row(T('犯規', 'Fouls'), 'fouls')}`;
+  $('resNext').firstChild.textContent = done ? T('再來一場', 'Play again') : T('下一局', 'Next rack');
   $('resNext').hidden = !!net && !net.open;
-  $t('resHome', net ? '離開對戰' : '回主選單');
-  $t('resNote', net && !net.open ? '對手已離線，無法開下一局' : '');
+  $t('resHome', net ? T('離開對戰', 'Leave match') : T('回主選單', 'Main menu'));
+  $t('resNote', net && !net.open ? T('對手已離線，無法開下一局', 'Your opponent left; no next rack') : '');
   if (locked()) document.exitPointerLock();
 }
 function homeOrbit() {
@@ -1491,7 +1538,7 @@ const netQ = [], PEER_PREFIX = 'pool3d-room-';
 const notMine = () => cpuTurn() || !!(net && (!net.open || game.cur !== net.me) && !game.over);
 const send = m => net?.open && net.conn.send(m);
 const matchDone = () => Math.max(...match.score) >= match.race;
-const scoreText = () => net ? `你 ${match.score[net.me]} : ${match.score[1 - net.me]} 對手` : '';
+const scoreText = () => net ? T(`你 ${match.score[net.me]} : ${match.score[1 - net.me]} 對手`, `You ${match.score[net.me]} : ${match.score[1 - net.me]} Opponent`) : '';
 const inviteLink = () => net ? location.origin + location.pathname + '?room=' + net.code : '';
 const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) => {
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
@@ -1545,7 +1592,7 @@ function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同�
 }
 function connLost(bye) {
   const c = net.conn; net.conn = null; net.open = false; net.lost = true; netQ.length = 0; c?.close();
-  flash(bye ? '對手離開了對戰' : '與對手的連線中斷了', 1e9);
+  flash(bye ? T('對手離開了對戰', 'Your opponent left the match') : T('與對手的連線中斷了', 'Lost the connection to your opponent'), 1e9);
   onTab = net.me === 1 ? 'join' : 'host'; showScreen('online'); // 直接跳到房間畫面（手機沒有滑鼠鎖定可解除，不能靠 pointerlockchange）
 }
 setInterval(() => { // 心跳
@@ -1557,7 +1604,7 @@ function setupConn(c) {
   net.conn = c;
   c.on('open', () => {
     Object.assign(net, { open: true, lost: false, rx: performance.now() });
-    flash(net.me === 0 ? '對手已加入！' : `已加入房間 ${net.code}`, 3); toast('連線成功');
+    flash(net.me === 0 ? T('對手已加入！', 'Opponent joined!') : T(`已加入房間 ${net.code}`, `Joined room ${net.code}`), 3); toast(T('連線成功', 'Connected'));
     if (net.me === 0) sendSync(true); // 房主送出完整局面（斷線重連也一樣接回來）
   });
   c.on('data', m => {
@@ -1571,22 +1618,22 @@ async function hostRoom(r, race) {
   leaveNet(); mode = r === 9 ? 3 : 1; resetMatch(race);
   const code = Math.random().toString(36).slice(2, 6).toUpperCase();
   net = { me: 0, open: false, code, ready: false }; newGame();
-  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
+  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = T('PeerJS 載入失敗，請檢查網路', 'Could not load PeerJS; check your connection')); }
   const peer = net.peer = new Peer(PEER_PREFIX + code);
   peer.on('open', () => { if (net?.peer === peer) net.ready = true; });
   peer.on('connection', c => (net?.conn ? c.close() : setupConn(c)));
-  peer.on('error', e => { if (net?.peer !== peer || net.ready) return; leaveNet(); $('netMsg').textContent = '建立房間失敗：' + e.type; });
+  peer.on('error', e => { if (net?.peer !== peer || net.ready) return; leaveNet(); $('netMsg').textContent = T('建立房間失敗：', 'Could not create room: ') + e.type; });
 }
 async function joinRoom(code) {
-  code = code.trim().toUpperCase(); if (code.length !== 4) return ($('netMsg').textContent = '房號是 4 個英數字');
+  code = code.trim().toUpperCase(); if (code.length !== 4) return ($('netMsg').textContent = T('房號是 4 個英數字', 'The room code is 4 letters or digits'));
   leaveNet(); net = { me: 1, open: false, code };
   history.replaceState(null, '', '?room=' + code);
-  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
+  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = T('PeerJS 載入失敗，請檢查網路', 'Could not load PeerJS; check your connection')); }
   const peer = net.peer = new Peer(), mine = net;
   const fail = t => { if (net !== mine || net.open || net.lost) return; leaveNet(); $('netMsg').textContent = t; };
   peer.on('open', () => net === mine && setupConn(peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' })));
-  peer.on('error', e => fail(e.type === 'peer-unavailable' ? `找不到房間 ${code}，請確認房號，或房主已離開` : '連線錯誤：' + e.type));
-  setTimeout(() => fail('連線逾時：可能是網路擋住了點對點連線，換個網路再試'), 15000);
+  peer.on('error', e => fail(e.type === 'peer-unavailable' ? T(`找不到房間 ${code}，請確認房號，或房主已離開`, `Room ${code} not found. Check the code, or the host has left`) : T('連線錯誤：', 'Connection error: ') + e.type));
+  setTimeout(() => fail(T('連線逾時：可能是網路擋住了點對點連線，換個網路再試', 'Timed out: your network may block peer-to-peer connections. Try another network')), 15000);
 }
 // ---- 線上房間畫面 ----
 let onTab = 'host', netUiKey = '';
@@ -1600,9 +1647,9 @@ $('join').addEventListener('click', () => { $('netMsg').textContent = ''; starte
 $('room').addEventListener('keydown', e => { if (e.key === 'Enter') $('join').click(); });
 $('room').addEventListener('input', () => { $('room').value = $('room').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 $('rCopy').addEventListener('click', () => {
-  if (isTouch && navigator.share) return navigator.share({ title: '3D 美式撞球', text: `來打一局！房號 ${net?.code}`, url: inviteLink() }).catch(() => {});
+  if (isTouch && navigator.share) return navigator.share({ title: T('3D 美式撞球', '3D Pool'), text: T(`來打一局！房號 ${net?.code}`, `Play a game of pool with me! Room ${net?.code}`), url: inviteLink() }).catch(() => {});
   $('rLink').select();
-  navigator.clipboard?.writeText(inviteLink()).then(() => { $('rCopy').textContent = '已複製 ✓'; setTimeout(() => ($('rCopy').textContent = '複製邀請連結'), 2000); }, () => {});
+  navigator.clipboard?.writeText(inviteLink()).then(() => { $('rCopy').textContent = T('已複製 ✓', 'Copied ✓'); setTimeout(() => ($('rCopy').textContent = T('複製邀請連結', 'Copy invite link')), 2000); }, () => {});
 });
 $('rPlay').addEventListener('click', () => { if (net?.open || (net && started)) play(); });
 $('rLeave').addEventListener('click', leaveToHome);
@@ -1613,32 +1660,32 @@ function updateNetUi() {
   const key = [st, net?.code, match.score.join(), menuOpen, screen, onTab, started, $('netMsg').textContent, cfg.game, cfg.race].join('|');
   if (key === netUiKey) return; netUiKey = key;
   const badge = $('netBadge'); badge.hidden = !net; badge.className = 'hbtn badge ' + st;
-  if (net) badge.innerHTML = `<i></i><span class="d-only">${{ make: '建立中', wait: '等待對手', conn: '連線中', ok: '已連線', lost: '連線中斷' }[st]}</span><small>${net.code}</small>`;
+  if (net) badge.innerHTML = `<i></i><span class="d-only">${(EN ? { make: 'Creating', wait: 'Waiting', conn: 'Connecting', ok: 'Connected', lost: 'Disconnected' } : { make: '建立中', wait: '等待對手', conn: '連線中', ok: '已連線', lost: '連線中斷' })[st]}</span><small>${net.code}</small>`;
   if (screen !== 'online') return;
   const host = onTab === 'host';
   document.querySelectorAll('#onTabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === onTab));
   $('hostPane').hidden = !host; $('joinPane').hidden = host;
   $('hostIdle').hidden = !!net; $('hostRoom').hidden = !net;
-  $('createRule').textContent = `${cfg.game} 號球 · ${cfg.race > 1 ? `搶 ${cfg.race} 局` : '單局'}`;
+  $('createRule').textContent = `${gameLabel(cfg.game)} · ${raceLabel(cfg.race)}`;
   if (net && host) { $('codeTiles').innerHTML = [...net.code].map(c => `<b>${c}</b>`).join(''); $('rLink').value = inviteLink(); }
   $('room').disabled = $('join').disabled = !!net && !net.lost;
   if (net && !host) $('room').value = net.code;
-  $('joinState').textContent = !net || host ? '' : { conn: `正在連線房間 ${net.code}…`, ok: `已加入房間 ${net.code}`, lost: '與房主的連線中斷' }[st] || '';
-  const steps = host ? ['建立房間', '邀請朋友', '等待對手加入', '開球'] : ['輸入房號', '連線房主', '開球'];
+  $('joinState').textContent = !net || host ? '' : { conn: T(`正在連線房間 ${net.code}…`, `Connecting to room ${net.code}…`), ok: T(`已加入房間 ${net.code}`, `Joined room ${net.code}`), lost: T('與房主的連線中斷', 'Lost the connection to the host') }[st] || '';
+  const steps = EN ? (host ? ['Create room', 'Invite a friend', 'Wait for opponent', 'Break'] : ['Enter code', 'Connect to host', 'Break']) : host ? ['建立房間', '邀請朋友', '等待對手加入', '開球'] : ['輸入房號', '連線房主', '開球'];
   const cur = host ? (!net || st === 'make' ? 0 : st === 'ok' ? 3 : 2) : (!net ? 0 : st === 'ok' ? 2 : 1);
   $('steps').innerHTML = steps.map((s, i) => `<div class="${i < cur ? 'done' : i === cur ? 'cur' : ''}${i === cur && st === 'lost' ? ' bad' : ''}"><i></i><span>${i + 1} · ${s}</span></div>`).join('');
   $('onR').hidden = !net && !host;
-  const meRow = `<div class="plr"><span class="av">你</span><span class="who"><b>你</b><small>${host ? '房主 · 先開第 1 局' : '挑戰者'}</small></span><em>${net ? '已就緒' : ''}</em></div>`;
-  const oppRow = st === 'ok' ? `<div class="plr"><span class="av">對</span><span class="who"><b>對手</b><small>${host ? '挑戰者' : '房主 · 先開第 1 局'}</small></span><em>已加入</em></div>`
-    : st === 'lost' ? `<div class="plr empty bad"><span class="av"></span><span class="who"><b>${host ? '對手已離線' : '房主已離線'}</b><small>${host ? '把邀請連結再傳一次' : '可以嘗試重新連線'}</small></span><em class="dot bad"></em></div>`
-    : `<div class="plr empty"><span class="av"></span><span class="who"><b>${host ? '等待對手加入…' : '連線房主中…'}</b><small>${host ? (net ? '對方打開邀請連結就會自動加入' : '建立房間後即可邀請') : ''}</small></span><em class="dot"></em></div>`;
+  const meRow = `<div class="plr"><span class="av">${T('你', 'Me')}</span><span class="who"><b>${T('你', 'You')}</b><small>${host ? T('房主 · 先開第 1 局', 'Host · breaks rack 1') : T('挑戰者', 'Challenger')}</small></span><em>${net ? T('已就緒', 'Ready') : ''}</em></div>`;
+  const oppRow = st === 'ok' ? `<div class="plr"><span class="av">${T('對', 'Opp')}</span><span class="who"><b>${T('對手', 'Opponent')}</b><small>${host ? T('挑戰者', 'Challenger') : T('房主 · 先開第 1 局', 'Host · breaks rack 1')}</small></span><em>${T('已加入', 'Joined')}</em></div>`
+    : st === 'lost' ? `<div class="plr empty bad"><span class="av"></span><span class="who"><b>${host ? T('對手已離線', 'Opponent left') : T('房主已離線', 'Host left')}</b><small>${host ? T('把邀請連結再傳一次', 'Send the invite link again') : T('可以嘗試重新連線', 'You can try reconnecting')}</small></span><em class="dot bad"></em></div>`
+    : `<div class="plr empty"><span class="av"></span><span class="who"><b>${host ? T('等待對手加入…', 'Waiting for opponent…') : T('連線房主中…', 'Connecting to host…')}</b><small>${host ? (net ? T('對方打開邀請連結就會自動加入', 'They join as soon as they open the invite link') : T('建立房間後即可邀請', 'Create a room to invite someone')) : ''}</small></span><em class="dot"></em></div>`;
   $('players').innerHTML = host ? meRow + oppRow : oppRow + meRow;
-  $('ruleTxt').textContent = net ? `${rules()} 號球 · ${match.race > 1 ? `搶 ${match.race} 局` : '單局'}` : $('createRule').textContent;
+  $('ruleTxt').textContent = net ? `${gameLabel(rules())} · ${raceLabel(match.race)}` : $('createRule').textContent;
   $('rPlay').disabled = !(st === 'ok' || (net && started));
-  $('rPlay').textContent = started && net ? '回到球桌' : '開始對戰';
-  $('startNote').textContent = !net || st === 'ok' || started ? '' : host ? '對手加入後即可開始' : '連上房主後即可開始';
+  $('rPlay').textContent = started && net ? T('回到球桌', 'Back to table') : T('開始對戰', 'Start match');
+  $('startNote').textContent = !net || st === 'ok' || started ? '' : host ? T('對手加入後即可開始', 'You can start once your opponent joins') : T('連上房主後即可開始', 'You can start once connected to the host');
   $('rRetry').hidden = !(net?.me === 1 && net.lost);
-  $('rLeave').textContent = net ? '離開房間' : '返回';
+  $('rLeave').textContent = net ? T('離開房間', 'Leave room') : T('返回', 'Back');
 }
 
 // ---- 主迴圈 ----
