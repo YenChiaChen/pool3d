@@ -733,17 +733,6 @@ const sfx = {
 const REC = {}, SND = 'https://cdn.jsdelivr.net/gh/tailuge/billiards@8aeb1dee14e7dccf71b47cdf6f68fc33e5f6459b/dist/sounds/';
 for (const n of ['ballcollision', 'cushion', 'cue', 'pot'])
   fetch(SND + n + '.ogg').then(r => r.arrayBuffer()).then(b => ac.decodeAudioData(b)).then(b => (REC[n] = b)).catch(() => {});
-// 台面滾動聲：棕噪音（低頻為主、不像白噪音那樣嘶嘶響）經低通，音量很小，跟著台上球的總速度
-let brown = 0;
-const rollSrc = ac.createBufferSource(), rollF = ac.createBiquadFilter(), rollG = ac.createGain();
-rollSrc.buffer = buf(4, 1, () => (brown = brown * 0.996 + (Math.random() * 2 - 1) * 0.04));
-rollSrc.loop = true; rollF.type = 'lowpass'; rollF.frequency.value = 150; rollF.Q.value = 0.5; rollG.gain.value = 0;
-rollSrc.connect(rollF).connect(rollG).connect(master); rollSrc.start();
-function updateRoll(on) {
-  let s = 0; if (on) for (const b of balls) if (b.active && !b.y) s += Math.hypot(b.vx, b.vz);
-  rollG.gain.setTargetAtTime(Math.min(0.1, s * 0.025), ac.currentTime, 0.1);
-  rollF.frequency.setTargetAtTime(120 + Math.min(280, s * 60), ac.currentTime, 0.1);
-}
 
 // ---- 物理 ----
 // 每顆球有線速度 v、離台高度 y / vy 與角速度 ω（實心球 I = 2/5 mR²）。
@@ -1660,7 +1649,7 @@ function frame(_, fixedDt) {
   const dt = fixedDt ?? Math.min(clock.getDelta(), 0.05);
   sfxBudget = 0;
   updateNetUi();
-  if (menuOpen && !fixedDt && !net) { homeOrbit(); updateRoll(false); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
+  if (menuOpen && !fixedDt && !net) { homeOrbit(); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
   if (state === 'moving') {
     acc += dt; simT += dt;
     while (acc >= STEP) { step(STEP); acc -= STEP; }
@@ -1762,7 +1751,7 @@ function frame(_, fixedDt) {
   camera.fov = FOV - fovKick; camera.updateProjectionMatrix();
 
   tickMsg(dt);
-  updateRoll(state === 'moving'); updateMarker(performance.now() / 1000);
+  updateMarker(performance.now() / 1000);
   
   updateHud();
   if (!fixedDt) renderer.render(scene, camera);
