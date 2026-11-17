@@ -26,6 +26,7 @@ First-person 3D American pool that runs in the browser. Nothing to install.
 | Mouse | Aim / tilt view |
 | Shift + mouse | Fine aim |
 | Hold left button | Charge, release to shoot |
+| Right-click / X | Cancel while charging |
 | Arrow keys | Spin |
 | Q / E | Cue elevation |
 | C | Reset spin and elevation |

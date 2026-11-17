@@ -1181,12 +1181,12 @@ for (const [id, apply, fmt] of [['vol', v => (master.gain.value = v), v => Math.
 $('setNav').addEventListener('click', e => { const t = e.target.closest('[data-st]')?.dataset.st; if (!t) return; document.querySelectorAll('#settings [data-st]').forEach(x => x.classList.toggle('on', x.dataset.st === t)); });
 $('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSettings(); $('tutReset').textContent = T('已設定，下次開局會顯示', 'Done, it shows next game'); });
 
-const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Arrow keys', 'Spin (follow, draw, side)'],
+const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Right-click / X', 'Cancel while charging'], ['Arrow keys', 'Spin (follow, draw, side)'],
   ['Q / E', 'Cue elevation (jump, masse)'], ['C', 'Reset spin and elevation'], ['Wheel', 'Zoom'], ['W A S D', 'Move cue ball (ball in hand)'], ['V', 'Top view'],
   ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Tab', 'Show / hide controls']];
 const TOUCH_EN = [['One-finger drag', 'Aim left/right, tilt view up/down'], ['Pinch', 'Zoom'], ['Power bar (right)', 'Pull down to charge, release to shoot; push back to the top to cancel'], ['Cue ball (bottom left)', 'Set spin and cue elevation'],
   ['Move cue ball', 'Turn on with ball in hand, then drag to place'], ['Fine aim', 'Lower drag sensitivity for precise aiming'], ['Top-right buttons', 'Top view / pause']];
-const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
+const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['右鍵 / X', '蓄力時取消出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
   ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明']];
 const TOUCH = EN ? TOUCH_EN : [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
@@ -1202,7 +1202,9 @@ addEventListener('mousemove', e => {
   pitch = clamp(pitch + e.movementY * 0.002 * k, 0.03, 1.3);
 });
 addEventListener('wheel', e => { if (!menuOpen) dist = clamp(dist * (1 + e.deltaY * 0.001), 0.3, 2.5); });
-addEventListener('mousedown', e => { if (locked() && !menuOpen && e.button === 0 && state === 'aim' && !notMine()) { charging = true; power = 0; } });
+const cancelCharge = () => { if (!charging || touchPow) return; charging = false; power = 0; flash(T('已取消出桿', 'Shot cancelled'), 1); };
+addEventListener('mousedown', e => { if (e.button === 2) return cancelCharge(); if (locked() && !menuOpen && e.button === 0 && state === 'aim' && !notMine()) { charging = true; power = 0; } });
+addEventListener('contextmenu', e => locked() && e.preventDefault());
 addEventListener('mouseup', e => { if (e.button === 0 && charging && !touchPow) { charging = false; fire(); } });
 addEventListener('keydown', e => {
   keys[e.code] = true;
@@ -1210,6 +1212,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Tab' || e.code === 'Slash') { e.preventDefault(); if (dlg === 'help') closeModal(); else openModal('help', !menuOpen); return; }
   if (e.code === 'Escape') return onEscape();
   if (dlg) return;
+  if (e.code === 'KeyX') cancelCharge();
   if (screen === 'home') {
     const o = { Digit1: 'cpu', Digit2: 'local', Digit3: 'online', Digit4: 'practice' }[e.code];
     if (o) { cfg.opp = o; saveCfg(); renderHome(); }
@@ -1462,6 +1465,7 @@ function hintText() {
   if (net && !net.open) return T('連線中斷 · 打開選單查看房間', 'Disconnected · open the menu to see the room');
   if (notMine()) return T('對手瞄準中…', 'Opponent is aiming…');
   if (!isTouch && !locked()) return T('點擊球台開始瞄準', 'Click the table to start aiming');
+  if (charging && !touchPow) return T('放開出桿・右鍵或 X 取消', 'Release to shoot · right-click or X to cancel');
   if (game.breakShot) return isTouch ? T('開球 · 可點「移動母球」在開球線後擺位', 'Break · tap "Move cue ball" to place it behind the line') : T('開球 · WASD 在開球線後擺母球', 'Break · WASD places the cue ball behind the line');
   if (game.ballInHand) return isTouch ? T('自由球 · 點「移動母球」後拖曳擺位', 'Ball in hand · tap "Move cue ball", then drag') : T('自由球 · WASD 移動母球', 'Ball in hand · move the cue ball with WASD');
   return isTouch ? '' : T('按住左鍵蓄力，放開出桿', 'Hold the left button to charge, release to shoot');
@@ -1542,6 +1546,20 @@ const send = m => net?.open && net.conn.send(m);
 const matchDone = () => Math.max(...match.score) >= match.race;
 const scoreText = () => net ? T(`你 ${match.score[net.me]} : ${match.score[1 - net.me]} 對手`, `You ${match.score[net.me]} : ${match.score[1 - net.me]} Opponent`) : '';
 const inviteLink = () => net ? location.origin + location.pathname + '?room=' + net.code : '';
+// NAT 穿透：只靠 STUN 的話，兩邊都在嚴格 NAT 後面（手機網路、公司／學校網路）就打不通，要靠 TURN 中繼轉送。
+// TURN_API：到 metered.ca 註冊免費帳號（每月 20GB），建立 TURN app 後把「credentials 網址」（含 apiKey）貼在這裡。留空就只用 STUN + PeerJS 的公用 TURN。
+const TURN_API = '';
+const ICE_BASE = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
+const ICE_PEERJS = [{ urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }]; // PeerJS 預設的公用 TURN，常常塞車，當最後備援
+let iceCache = null; // ponytail: 一個分頁只抓一次憑證；Metered 的憑證若改成會過期的，再改成每次開房重抓
+async function peerOpts() {
+  if (!iceCache) {
+    let turn = [];
+    if (TURN_API) try { const r = await fetch(TURN_API, { signal: AbortSignal.timeout(5000) }); if (r.ok) turn = (await r.json()).filter(s => s && s.urls); } catch {}
+    iceCache = [...ICE_BASE, ...turn, ...ICE_PEERJS];
+  }
+  return { config: { iceServers: iceCache } };
+}
 const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) => {
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
   sc.onload = ok; sc.onerror = bad; document.head.append(sc);
@@ -1621,7 +1639,8 @@ async function hostRoom(r, race) {
   const code = Math.random().toString(36).slice(2, 6).toUpperCase();
   net = { me: 0, open: false, code, ready: false }; newGame();
   try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = T('PeerJS 載入失敗，請檢查網路', 'Could not load PeerJS; check your connection')); }
-  const peer = net.peer = new Peer(PEER_PREFIX + code);
+  const mine = net, opts = await peerOpts(); if (net !== mine) return;
+  const peer = net.peer = new Peer(PEER_PREFIX + code, opts);
   peer.on('open', () => { if (net?.peer === peer) net.ready = true; });
   peer.on('connection', c => (net?.conn ? c.close() : setupConn(c)));
   peer.on('error', e => { if (net?.peer !== peer || net.ready) return; leaveNet(); $('netMsg').textContent = T('建立房間失敗：', 'Could not create room: ') + e.type; });
@@ -1631,9 +1650,15 @@ async function joinRoom(code) {
   leaveNet(); net = { me: 1, open: false, code };
   history.replaceState(null, '', '?room=' + code);
   try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = T('PeerJS 載入失敗，請檢查網路', 'Could not load PeerJS; check your connection')); }
-  const peer = net.peer = new Peer(), mine = net;
+  const mine = net, opts = await peerOpts(); if (net !== mine) return;
+  const peer = net.peer = new Peer(opts);
   const fail = t => { if (net !== mine || net.open || net.lost) return; leaveNet(); $('netMsg').textContent = t; };
-  peer.on('open', () => net === mine && setupConn(peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' })));
+  peer.on('open', () => {
+    if (net !== mine) return;
+    const c = peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' });
+    c.on('iceStateChanged', s => s === 'failed' && fail(T('連不上對方：雙方的網路擋住了點對點連線。換個網路（例如手機熱點）再試', "Couldn't reach the host: both networks block peer-to-peer connections. Try another network, such as a phone hotspot")));
+    setupConn(c);
+  });
   peer.on('error', e => fail(e.type === 'peer-unavailable' ? T(`找不到房間 ${code}，請確認房號，或房主已離開`, `Room ${code} not found. Check the code, or the host has left`) : T('連線錯誤：', 'Connection error: ') + e.type));
   setTimeout(() => fail(T('連線逾時：可能是網路擋住了點對點連線，換個網路再試', 'Timed out: your network may block peer-to-peer connections. Try another network')), 15000);
 }
