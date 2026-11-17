@@ -2,121 +2,478 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0e0e">
+<link rel="manifest" href="manifest.webmanifest">
 <title>3D 美式撞球</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,"PingFang TC",sans-serif;color:#fff}
-#hud{position:fixed;top:12px;left:14px;font-size:14px;line-height:1.5;text-shadow:0 1px 3px #000;pointer-events:none;display:grid;gap:5px}
-#hud .mode{font-size:12px;opacity:.7}
-#hud .row{display:flex;align-items:center;gap:4px;padding:3px 8px 3px 4px;border-radius:8px;background:#0006}
-#hud .row.cur{background:#1f5a3acc;box-shadow:0 0 0 1px #6fd39a88}
-#hud .name{min-width:74px;font-weight:600}
-#hud .grp{font-size:12px;opacity:.75;margin-right:4px}
-.chip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;box-shadow:inset -2px -2px 3px #0006;flex:none}
-.chip b{width:10px;height:10px;border-radius:50%;background:#f4efe0;color:#111;font-size:7px;line-height:10px;text-align:center;font-weight:700}
-.chip.off{opacity:.2;filter:grayscale(1)}
-.chip.target{outline:2px solid #ffe066;outline-offset:1px}
-#msg{position:fixed;top:38%;width:100%;text-align:center;font-size:30px;font-weight:600;text-shadow:0 2px 8px #000;pointer-events:none;transition:opacity .4s}
-#toast{position:fixed;top:30%;width:100%;text-align:center;font-size:20px;font-weight:600;color:#ffe9a8;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s}
-#toast.on{opacity:1;transform:translateY(-8px)}
-#power{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);width:320px;height:10px;border:1px solid #fff8;border-radius:6px;overflow:hidden}
-#power div{height:100%;width:0;background:linear-gradient(90deg,#4c4,#ec3,#e33)}
-#power i{position:absolute;top:-1px;bottom:-1px;width:2px;margin-left:-1px;background:#fff;opacity:0;box-shadow:0 0 4px #fff}
-#power.max{box-shadow:0 0 12px #f44;border-color:#f66;animation:shake .07s linear infinite}
-@keyframes shake{0%{transform:translate(calc(-50% - 2px),0)}50%{transform:translate(calc(-50% + 2px),-1px)}100%{transform:translate(calc(-50% - 1px),1px)}}
-#tip{position:fixed;right:22px;bottom:22px;width:76px;height:76px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#d8d2c2);box-shadow:0 2px 10px #000a;pointer-events:none}
-#tip b{position:absolute;top:-22px;width:120px;left:-22px;text-align:center;font-size:12px;font-weight:500;text-shadow:0 1px 2px #000}
-#tip i{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#d11;left:50%;top:50%}
-#hint{position:fixed;bottom:44px;left:110px;right:110px;text-align:center;font-size:13px;opacity:.85;pointer-events:none;text-shadow:0 1px 3px #000}
-.panel{background:#15110ddd;border:1px solid #ffffff22;border-radius:14px;padding:22px 26px;box-shadow:0 20px 60px #000c}
-.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px;align-items:baseline}
-.keys kbd{font:600 12px system-ui,sans-serif;background:#ffffff14;border:1px solid #ffffff2a;border-radius:5px;padding:1px 6px;white-space:nowrap;justify-self:end}
-#helpPanel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);display:none;pointer-events:none}
-#helpPanel.on{display:block}
-#menu{z-index:10;position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#0008;backdrop-filter:blur(6px);padding:16px}
-#menu.on{display:flex}
-#menu .panel{width:min(600px,100%);max-height:100%;overflow:auto;box-sizing:border-box}
-#menu h1{margin:0 0 4px;font-size:26px;letter-spacing:.04em}
-#menu .sub{opacity:.6;font-size:13px;margin-bottom:18px}
-#menu h2{font-size:13px;opacity:.6;font-weight:600;margin:18px 0 8px}
-#modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-#modes button:last-child{grid-column:span 2}
-#menu button{font:600 14px system-ui,"PingFang TC",sans-serif;color:#fff;background:#1f5a3a;border:1px solid #6fd39a55;border-radius:9px;padding:11px 8px;cursor:pointer}
-#menu button:hover{background:#2a7a4f}
-#menu button.cur{box-shadow:0 0 0 2px #ffe066}
-.netbox{background:#0003;border:1px solid #ffffff14;border-radius:12px;padding:12px;display:grid;gap:10px}
-.nrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.nrow>b{font-size:13px;opacity:.7;min-width:64px}
-.seg{display:flex;border-radius:9px;overflow:hidden;border:1px solid #6fd39a55}
-#menu .seg button{border:0;border-radius:0;background:#0004;padding:9px 12px;opacity:.65}
-#menu .seg button.on{background:#1f5a3a;opacity:1}
-#create{margin-left:auto}
-#room,#rLink{font:600 15px system-ui,sans-serif;color:#fff;background:#0006;border:1px solid #6fd39a55;border-radius:9px;padding:10px;min-width:0}
-#room{flex:1;text-transform:uppercase;letter-spacing:.2em;text-align:center}
-#netMsg{font-size:13px;color:#ff9b8a}#netMsg:empty{display:none}
-#menu.online .local,#menu:not(.online) #roomPanel{display:none}
-#roomPanel{display:grid;gap:12px;margin-top:14px}
-.rstat{display:flex;align-items:center;gap:10px;font-size:18px}
-.rstat i,#netBadge i{width:10px;height:10px;border-radius:50%;background:#e6b655;flex:none;animation:pulse 1.2s infinite}
-#roomPanel.ok .rstat i{background:#4cd27a;animation:none}#roomPanel.lost .rstat i{background:#e65555;animation:none}#roomPanel.lost .rstat b{color:#ff9b8a}
-#rInfo{font-size:13px;opacity:.7}#rScore{font-size:22px;font-weight:700}#rScore:empty{display:none}
-.rhelp{font-size:13px;opacity:.7;margin-bottom:6px}
-.rlink{display:flex;gap:8px}.rlink input{flex:1;font-size:13px!important}
-.ract{display:flex;gap:8px}.ract button{flex:1}
-#rPlay{background:#7a5a1c!important;border-color:#e6b65555!important}
-#rLeave{background:#5a1f1f!important;border-color:#e6555555!important}
+:root{--bg:#0d0e0e;--s1:#161817;--s2:#272a28;--s3:#333634;--ln:rgba(255,255,255,.08);--ln2:rgba(255,255,255,.14);--tx:#ecebe7;--tx2:#c9c8c3;--mu:#8d908d;--dim:#5f625f;--ac:#6fdc9a;--aci:#0b1a11;--warn:#f1c75b;--bad:#ff7a66;--mono:'Geist Mono',ui-monospace,monospace;--sans:'Geist','Noto Sans TC',system-ui,-apple-system,'PingFang TC',sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:var(--sans);color:var(--tx);-webkit-tap-highlight-color:transparent}
+a{color:var(--ac)}a:hover{color:#a6f0c3}
+canvas{display:block;touch-action:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+button:disabled{cursor:default}
+kbd{font:500 11px var(--mono);color:var(--mu);letter-spacing:.02em}
+[hidden]{display:none!important}
+body.touch .d-only{display:none!important}
+body:not(.touch) .t-only{display:none!important}
 @keyframes pulse{50%{opacity:.35}}
-#netBadge{position:fixed;top:14px;right:16px;z-index:4;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:#000a;border:1px solid #ffffff22;border-radius:20px;padding:7px 14px;pointer-events:none;text-shadow:none}
-#netBadge[hidden]{display:none}
-#netBadge span{opacity:.7;font-weight:500}
-#netBadge.ok i{background:#4cd27a;animation:none}#netBadge.lost{border-color:#e65555;background:#3a0d0dcc}#netBadge.lost i{background:#e65555;animation:none}
-#resume{width:100%;margin-top:10px;background:#7a5a1c!important;border-color:#e6b65555!important}
-#menu label{display:flex;align-items:center;gap:12px;font-size:14px;margin:6px 0}
-#menu label span{min-width:90px}
-#menu input[type=range]{flex:1;accent-color:#6fd39a}
-#menu .keys{grid-template-columns:auto 1fr auto 1fr}
-#helpPanel{z-index:5}
-@media (max-width:520px){#modes{grid-template-columns:repeat(2,1fr)}#menu .keys{grid-template-columns:auto 1fr}}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:2;user-select:none;-webkit-user-select:none}
+#hud button,#tipBox,#tpow,#foul{pointer-events:auto}
+body.inmenu #hud,body.inmenu #coach,body.res #coach,body.res #hud .play{display:none!important}
+#modeLabel{position:fixed;top:20px;left:24px;font:500 13px var(--mono);color:var(--mu)}
+#topR{position:fixed;top:14px;right:20px;display:flex;gap:8px}
+.hbtn{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;background:rgba(13,14,14,.78);border:1px solid var(--ln);font-size:13px;color:var(--tx2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap}
+.hbtn.on{background:var(--tx);color:#111}
+.bars{display:flex;gap:3px}.bars i{width:3px;height:12px;border-radius:1px;background:currentColor}
+.badge{pointer-events:none}
+.badge i{width:8px;height:8px;border-radius:50%;background:var(--warn);animation:pulse 1.2s infinite}
+.badge.ok i{background:var(--ac);animation:none}.badge.lost{border-color:var(--bad);color:var(--bad)}.badge.lost i{background:var(--bad);animation:none}
+.badge small{font:500 11px var(--mono);color:var(--mu)}
+#topC{position:fixed;top:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px}
+#board{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;padding:5px;border-radius:16px;background:rgba(13,14,14,.86);border:1px solid var(--ln);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#board:has(.one){grid-template-columns:auto}
+.pl{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-radius:12px;min-width:250px;opacity:.7;transition:background .25s,opacity .25s}
+.pl.cur,.pl.one{opacity:1}.pl.cur{background:rgba(111,220,154,.12)}
+.plh{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.nm{font-weight:600;font-size:16px}
+.grp{font-size:12px;color:var(--mu)}
+.rem{display:none;font:500 12px var(--mono);color:var(--mu)}
+.stt{margin-left:auto;font:500 11px var(--mono);color:var(--ac)}
+.chips{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.sep{width:1px;height:16px;background:var(--ln2);margin:0 3px}
+.chip{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none;box-shadow:inset -2px -2px 3px rgba(0,0,0,.35);transition:opacity .3s}
+.chip b{width:10px;height:10px;border-radius:50%;background:#f4efe0;color:#111;font:700 7px/10px var(--sans);text-align:center}
+.chip.off{opacity:.16}.chip.tgt{outline:2px solid var(--warn);outline-offset:2px}
+.chips.lg{gap:5px}.chips.lg .chip{width:26px;height:26px}.chips.lg .chip b{width:13px;height:13px;font-size:9px;line-height:13px}
+.sc{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;gap:2px}
+.sc b{font:600 28px var(--mono);letter-spacing:.04em;white-space:nowrap}.sc b i{font-style:normal;color:var(--dim);margin:0 8px}
+.sc small{font:500 11px var(--mono);color:var(--mu);white-space:nowrap}
+.row9{grid-column:1/-1;display:flex;justify-content:center;gap:6px;padding:2px 0 6px}
+#info{padding:9px 18px;border-radius:999px;background:rgba(13,14,14,.86);border:1px solid var(--ln);font-size:15px;font-weight:500;opacity:0;transform:translateY(-6px);transition:opacity .3s,transform .3s;white-space:nowrap}
+#info.on{opacity:1;transform:none}
+#pots{position:fixed;left:24px;top:52px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.pot{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border-radius:999px;background:rgba(13,14,14,.82);font-size:13px;animation:potIn .25s ease-out;transition:opacity .4s,transform .4s}
+.pot.out{opacity:0;transform:translateX(-8px)}.pot.bad{color:var(--bad)}
+.pot .dot{width:16px;height:16px;border-radius:50%}
+@keyframes potIn{from{opacity:0;transform:translateX(-8px)}}
+#foul{position:fixed;top:50%;left:50%;transform:translate(-50%,-46%);width:min(540px,calc(100vw - 32px));padding:24px 28px;border-radius:18px;background:rgba(22,24,23,.96);border:1px solid rgba(255,122,102,.35);display:flex;flex-direction:column;gap:12px;opacity:0;visibility:hidden;transition:opacity .25s,transform .25s,visibility .25s;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+#foul.on{opacity:1;visibility:visible;transform:translate(-50%,-50%)}
+.fh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tag{padding:4px 12px;border-radius:999px;background:var(--bad);color:#2a0d07;font-weight:700;font-size:14px}
+#foulWhy{font-size:15px;color:var(--tx2)}
+#foulTitle{font-size:28px;font-weight:700;line-height:1.25}
+#foulDesc{font-size:15px;color:var(--mu);line-height:1.5}
+.fbar{height:3px;border-radius:2px;background:var(--ln);overflow:hidden}
+.fbar i{display:block;height:100%;background:var(--bad);transform-origin:left}
+#foul.on .fbar i{animation:fbar 3.2s linear forwards}
+@keyframes fbar{to{transform:scaleX(0)}}
+#tipBox{position:fixed;left:24px;bottom:24px;display:flex;align-items:center;gap:16px;padding:14px 18px 14px 14px;border-radius:16px;background:rgba(13,14,14,.86);border:1px solid var(--ln);cursor:pointer}
+.cueball{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#d8d2c2);position:relative;flex:none}
+.cueball::before,.cueball::after{content:'';position:absolute;background:rgba(0,0,0,.12)}
+.cueball::before{left:50%;top:10%;bottom:10%;width:1px}.cueball::after{top:50%;left:10%;right:10%;height:1px}
+.cueball i{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#e2402e;box-shadow:0 0 0 3px rgba(226,64,46,.25);left:50%;top:50%}
+.tinfo{display:flex;flex-direction:column;gap:6px}
+.tv{display:flex;gap:18px}.tv div{display:flex;flex-direction:column;gap:2px}
+.tv small{font-size:11px;color:var(--mu)}.tv b{font-size:15px;font-weight:600;white-space:nowrap}
+.tkeys{font:400 11px var(--mono);color:var(--mu)}
+#power{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);width:min(440px,36vw);display:flex;flex-direction:column;gap:8px;transition:opacity .2s}
+body:not(.mine) #power,body:not(.mine) #tpow{opacity:.35}
+.plab{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);min-height:14px}
+.plab b{font:600 13px var(--mono);color:var(--tx)}
+.ptrack{height:8px;border-radius:4px;background:rgba(255,255,255,.12);position:relative}
+.pmax{position:absolute;left:85%;right:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:rgba(255,122,102,.25)}
+#powFill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:4px;background:var(--ac)}
+#powLast{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--tx);opacity:0}
+#power.max #powFill,#tpow.max #tpowFill{background:var(--bad)}
+#power.max .ptrack{animation:shake .07s linear infinite}
+@keyframes shake{0%{transform:translate(-2px,0)}50%{transform:translate(2px,-1px)}100%{transform:translate(-1px,1px)}}
+#hint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);font-size:12px;color:var(--tx2);white-space:nowrap;text-shadow:0 1px 3px #000}
+#keyHints{position:fixed;right:24px;bottom:24px;display:grid;grid-template-columns:auto auto;gap:6px 10px;align-items:center;font-size:12px;color:var(--mu)}
+#keyHints kbd{justify-self:end;padding:3px 7px;border-radius:5px;border:1px solid var(--ln2);color:var(--tx2)}
+#tpow{position:fixed;right:max(20px,env(safe-area-inset-right));top:64px;bottom:16px;width:64px;border-radius:32px;background:rgba(13,14,14,.82);border:1px solid var(--ln);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;touch-action:none}
+#tpow b{font:600 12px var(--mono)}
+#tpow small{font-size:10px;color:var(--mu);text-align:center;line-height:1.2}
+.tt{flex:1;width:8px;margin:22px 0;border-radius:4px;background:rgba(255,255,255,.12);position:relative}
+#tpowFill{position:absolute;left:0;right:0;top:0;height:0;border-radius:4px;background:var(--ac)}
+#tpowKnob{position:absolute;left:50%;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--tx);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+#tbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px}
+#tbar .hbtn{height:44px;padding:0 18px;font-size:14px}
+#moveBtn{display:none!important}body.bih #moveBtn{display:flex!important}
+body.touch #tipBox{left:max(16px,env(safe-area-inset-left));bottom:14px;padding:8px 14px 8px 8px;gap:10px}
+body.touch #tipBox .cueball{width:56px;height:56px}
+body.touch #power,body.touch #keyHints{display:none}
+body.touch #hint{bottom:68px}
+body.touch #topR{right:max(96px,calc(env(safe-area-inset-right) + 80px))}
+@media (max-width:980px),(max-height:520px){
+  .pl{min-width:0;padding:6px 12px;gap:4px}.pl .chips,.stt,.grp{display:none}.rem{display:inline}
+  .sc{padding:0 8px}.sc b{font-size:20px}.sc b i{margin:0 5px}.sc small{display:none}
+  .row9 .chip{width:16px;height:16px}.row9 .chip b{width:8px;height:8px;font-size:6px;line-height:8px}
+  #modeLabel,#keyHints,.tkeys{display:none}
+  #topC{top:10px;gap:8px}#topR{top:10px}
+  #pots{top:auto;bottom:100px;left:16px}
+  #foulTitle{font-size:22px}#foul{padding:18px 20px}
+  #info{font-size:13px;padding:7px 14px}
+}
+#rotate{display:none;position:fixed;left:16px;right:16px;bottom:96px;z-index:5;padding:14px 16px;border-radius:14px;background:var(--s1);border:1px solid var(--ln);align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+#rotate button{color:var(--ac);font-size:14px}
+@media (orientation:portrait) and (max-width:600px){body.touch:not(.inmenu) #rotate{display:flex}}
+
+/* ---------- 共用 ---------- */
+.card{background:var(--s1);border:1px solid var(--ln);border-radius:16px}
+.seg{display:flex;padding:3px;border-radius:10px;background:var(--bg);gap:3px}
+.seg button{flex:1;text-align:center;padding:9px 12px;font-size:14px;color:var(--mu);border-radius:8px;white-space:nowrap}
+.seg button.on{background:var(--s2);color:var(--tx)}
+.primary{display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 24px;border-radius:12px;background:var(--ac);color:var(--aci);font-weight:600;font-size:16px;white-space:nowrap}
+.primary:hover:not(:disabled){filter:brightness(1.08)}
+.primary kbd{color:var(--aci);opacity:.6}
+.primary:disabled{background:var(--s2);color:var(--dim)}
+.ghost{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:12px;border:1px solid var(--ln2);font-size:15px;white-space:nowrap}
+.ghost:hover{background:rgba(255,255,255,.04)}
+.danger{color:var(--bad)}
+.pill{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;border:1px solid var(--ln2);font-size:14px;color:var(--tx2)}
+.pill:hover{background:rgba(255,255,255,.05)}
+.lbl{font-size:13px;color:var(--mu)}
+.eyebrow{font:500 13px var(--mono);color:var(--mu);letter-spacing:.12em}
+hr{border:0;height:1px;background:var(--ln);margin:6px 18px}
+
+/* ---------- 畫面 ---------- */
+.scr{position:fixed;inset:0;z-index:10;display:none;overflow:auto;-webkit-overflow-scrolling:touch}
+.scr.on{display:block}
+.wrap{min-height:100%;padding:36px 56px 40px;display:flex;flex-direction:column;gap:32px;max-width:1280px;padding-left:max(56px,env(safe-area-inset-left))}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{font:600 13px var(--mono);letter-spacing:.2em;color:var(--mu)}
+.tbtns{display:flex;gap:8px}
+#home{background:linear-gradient(90deg,rgba(13,14,14,.97) 0%,rgba(13,14,14,.9) 55%,rgba(13,14,14,.5) 100%)}
+.homeGrid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,400px);gap:44px;align-items:start}
+.homeL{display:flex;flex-direction:column;gap:28px}
+h1{margin:0;font:700 44px/1.1 var(--sans);letter-spacing:-.01em}
+.homeL p{margin:8px 0 0;font-size:15px;color:var(--mu)}
+.opps{display:flex;flex-direction:column;gap:6px}
+.opp{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-radius:12px;transition:background .15s}
+.opp:hover{background:rgba(255,255,255,.04)}
+.opp span{display:flex;flex-direction:column;gap:2px}
+.opp b{font-size:18px;font-weight:600}.opp small{font-size:13px;color:var(--mu)}
+.opp.on{background:var(--tx);color:#111}.opp.on small,.opp.on kbd{color:#555}
+.cfg{padding:24px;display:flex;flex-direction:column;gap:22px;margin-top:70px}
+.cfg h3{margin:0;font-size:20px}
+.fld{display:flex;flex-direction:column;gap:10px}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rules button{padding:14px;border-radius:10px;border:1px solid var(--ln2);display:flex;flex-direction:column;gap:4px}
+.rules b{font-size:16px;font-weight:600}.rules small{font-size:12px;color:var(--mu);line-height:1.4}
+.rules button.on{border:1.5px solid var(--ac);padding:13.5px}
+.cfgNote{margin:0;font-size:14px;color:var(--mu);line-height:1.5}.cfgNote:empty{display:none}
+#onBtns{display:flex;flex-direction:column;gap:8px}
+#resumeCard{margin-top:auto;align-self:flex-start;display:flex;align-items:center;gap:14px;padding:12px 16px 12px 14px;border-radius:12px;background:var(--s1);border:1px solid var(--ln)}
+#resumeCard i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+#resumeCard span{display:flex;flex-direction:column;gap:2px}
+#resumeCard b{font-size:14px}#resumeCard small{font:400 12px var(--mono);color:var(--mu)}
+#resumeCard kbd{margin-left:12px}
+#online{background:rgba(13,14,14,.96)}
+.back{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--tx2)}
+.steps{display:flex;gap:10px}
+.steps div{flex:1;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--dim)}
+.steps i{height:3px;border-radius:2px;background:var(--ln)}
+.steps .done{color:var(--ac)}.steps .done i{background:var(--ac)}
+.steps .cur{color:var(--tx)}.steps .cur i{background:linear-gradient(90deg,var(--warn) 50%,var(--ln) 50%)}
+.steps .bad{color:var(--bad)}.steps .bad i{background:var(--bad)}
+.onGrid{display:grid;grid-template-columns:minmax(0,600px) minmax(0,440px);justify-content:space-between;gap:40px}
+.onL{display:flex;flex-direction:column;gap:28px}.onR{display:flex;flex-direction:column;gap:14px}
+.pane{display:flex;flex-direction:column;gap:14px}
+.onL p{margin:0;font-size:15px;color:var(--tx2);line-height:1.5}
+.tiles{display:flex;gap:10px}
+.tiles b{width:96px;height:112px;border-radius:14px;background:var(--s1);border:1px solid var(--ln);display:grid;place-items:center;font:600 60px var(--mono)}
+.linkRow{display:flex;gap:8px}
+#rLink{flex:1;min-width:0;padding:14px 16px;border-radius:10px;background:var(--s1);border:1px solid var(--ln);font:400 14px var(--mono);color:var(--mu);outline:none}
+.codeRow{display:flex;gap:10px;flex-wrap:wrap}
+.codeIn{flex:1;min-width:220px;max-width:380px;padding:16px;border-radius:14px;background:var(--s1);border:1px solid var(--ln2);font:600 44px var(--mono);letter-spacing:.4em;text-indent:.4em;text-align:center;text-transform:uppercase;color:var(--tx);outline:none}
+.codeIn:focus{border-color:var(--ac)}.codeIn::placeholder{color:var(--s3)}
+#netMsg{font-size:14px;color:var(--bad)}#netMsg:empty{display:none}
+#joinState{font-size:15px;color:var(--warn)}#joinState:empty{display:none}
+.plr{display:flex;align-items:center;gap:14px;padding:16px;border-radius:12px;background:var(--s1);border:1px solid var(--ln)}
+.plr .av{width:40px;height:40px;border-radius:50%;background:var(--s2);display:grid;place-items:center;font-weight:600;flex:none}
+.plr .who{flex:1;display:flex;flex-direction:column;gap:2px}
+.plr small{font-size:13px;color:var(--mu)}
+.plr em{font-style:normal;font-size:13px;color:var(--ac)}
+.plr.empty{background:none;border:1px dashed rgba(255,255,255,.18)}.plr.empty .av{background:none;border:1px dashed rgba(255,255,255,.25)}
+.plr em.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);animation:pulse 1.2s infinite}
+.plr.bad b{color:var(--bad)}.plr em.dot.bad{background:var(--bad);animation:none}
+.ruleRow{display:flex;justify-content:space-between;padding:14px 16px;border-radius:12px;background:var(--s1);font-size:14px}
+.onFoot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.onFoot>div{display:flex;align-items:center;gap:14px}
+#startNote{font-size:13px;color:var(--mu)}
+#pause{background:linear-gradient(90deg,rgba(8,9,9,.95) 0%,rgba(8,9,9,.8) 45%,rgba(8,9,9,.45) 100%)}
+.pauseGrid{display:flex;justify-content:space-between;gap:40px;padding:110px 96px 40px;flex-wrap:wrap;min-height:100%}
+.pL{width:360px;max-width:100%;display:flex;flex-direction:column;gap:28px}
+.pL h2{margin:6px 0 4px;font-size:40px;font-weight:700}
+.pL p{margin:0;font-size:14px;color:var(--mu)}
+.plist{display:flex;flex-direction:column;gap:4px}
+.plist button{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-radius:12px;font-size:16px}
+.plist button:hover{background:rgba(255,255,255,.05)}
+.plist .pri{background:var(--tx);color:#111;font-weight:600}.plist .pri:hover{background:#fff}.plist .pri kbd{color:#666}
+.pR{width:380px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+#pTable{padding:18px;display:flex;flex-direction:column;gap:14px;background:rgba(22,24,23,.9)}
+#pTable hr{margin:0}
+.trow{display:flex;justify-content:space-between;font-size:14px}.trow .mono{font-family:var(--mono);color:var(--mu)}
+#result{position:fixed;inset:0;z-index:8;display:none;overflow:auto;background:rgba(8,9,9,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#result.on{display:block}
+.rIn{width:min(720px,100%);margin:0 auto;padding:64px 20px 40px;display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center}
+.rIn .eyebrow{color:var(--ac)}
+.rIn h2{margin:8px 0 0;font-size:48px}
+.rScore{display:flex;align-items:center;gap:40px}
+.rp{display:flex;flex-direction:column;gap:4px;align-items:flex-end;min-width:80px}.rp.r{align-items:flex-start}
+.rp b{font-size:18px}.rp small{font-size:13px;color:var(--mu)}
+.big{font:600 84px var(--mono);letter-spacing:.04em;white-space:nowrap}.big i{font-style:normal;color:var(--dim);margin:0 18px}
+.racks{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.racks div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.racks i{width:56px;height:6px;border-radius:3px;background:var(--dim)}.racks i.w{background:var(--ac)}
+.racks small{font:400 11px var(--mono);color:var(--mu)}
+.stats{width:100%;padding:6px 24px;text-align:left}
+.srow{display:grid;grid-template-columns:1fr 110px 110px;padding:12px 0;font-size:15px;border-bottom:1px solid rgba(255,255,255,.06)}
+.srow:last-child{border:0}.srow span+span{text-align:right;font-family:var(--mono)}
+.srow.h{font-size:13px;color:var(--mu)}.srow.h span+span{font-family:var(--sans)}
+.ract{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#resNote{margin:0;font-size:14px;color:var(--bad)}#resNote:empty{display:none}
+
+/* ---------- 視窗 ---------- */
+.modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(8,9,9,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal.on{display:flex}
+.mbox{position:relative;width:min(820px,100%);height:min(580px,100%);border-radius:18px;background:var(--s1);border:1px solid var(--ln);display:flex;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mnav{width:200px;flex:none;padding:24px 12px;border-right:1px solid var(--ln);display:flex;flex-direction:column;gap:4px}
+.mnav h3{margin:0;font-size:18px;padding:0 12px 16px}
+.mnav button{padding:11px 12px;border-radius:8px;font-size:15px;color:var(--mu);white-space:nowrap}
+.mnav button.on{background:var(--s2);color:var(--tx)}
+.mbody{flex:1;overflow:auto;padding:28px 32px}
+.mbody section{display:none;flex-direction:column;gap:26px}.mbody section.on{display:flex}
+.mclose{position:absolute;top:18px;right:18px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--ln2);font:400 12px var(--mono);color:var(--mu);background:var(--s1)}
+.sgrp{display:flex;flex-direction:column}.sgrp>.lbl{padding-bottom:6px}
+.srow2{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);width:100%}
+.srow2:last-child{border:0}
+.srow2 span{display:flex;flex-direction:column;gap:3px}.srow2 b{font-size:15px;font-weight:400}.srow2 small{font-size:13px;color:var(--mu)}
+.sw{width:44px;height:26px;border-radius:13px;background:var(--s3);position:relative;flex:none;transition:background .2s}
+.sw::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--mu);transition:transform .2s,background .2s}
+.srow2.on .sw{background:var(--ac)}.srow2.on .sw::after{transform:translateX(18px);background:var(--aci)}
+.rng{display:flex;align-items:center;gap:16px;padding-top:6px}
+input[type=range]{flex:1;accent-color:var(--ac);min-width:0}
+.rng output{font:500 14px var(--mono);width:60px;text-align:right}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:14px;align-items:baseline}
+.keys kbd{justify-self:end;padding:3px 8px;border-radius:5px;border:1px solid var(--ln2);color:var(--tx2);white-space:nowrap}
+.keys.two{grid-template-columns:auto 1fr auto 1fr}
+.mbox.help{flex-direction:column;gap:22px;padding:28px 32px;height:auto;max-height:100%;overflow:auto;width:min(760px,100%)}
+.mbox.help h3{margin:0;font-size:20px}
+#help.passive{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none}
+#help.passive .mclose{display:none}
+#help.passive .mbox{background:rgba(22,24,23,.94)}
+
+/* ---------- 打點面板（觸控） ---------- */
+#tipPad{position:fixed;inset:0;z-index:7;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(8,9,9,.6)}
+#tipPad.on{display:flex}
+.padBox{padding:22px;border-radius:18px;background:var(--s1);border:1px solid var(--ln);display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center}
+#padBall{width:min(180px,40vh);height:min(180px,40vh);touch-action:none;cursor:crosshair}
+#padBall i{width:18px;height:18px;margin:-9px 0 0 -9px}
+.padSide{display:flex;flex-direction:column;gap:14px;width:220px}
+.padSide .row{display:flex;gap:8px}.padSide .row>*{flex:1}
+
+/* ---------- 新手引導 ---------- */
+#coach{display:none;position:fixed;inset:0;pointer-events:none;z-index:6}
+#coach.on{display:block}
+.cCard{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);width:min(420px,calc(100vw - 32px));padding:20px 22px;border-radius:16px;background:var(--tx);color:#111;display:flex;flex-direction:column;gap:10px;pointer-events:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.cTop{display:flex;justify-content:space-between;align-items:center}
+#cNum{font:500 12px var(--mono);color:#666}
+.cDots{display:flex;gap:4px}.cDots i{width:18px;height:4px;border-radius:2px;background:#c8c6bf}.cDots i.on{background:#111}
+#cTitle{margin:0;font-size:20px;font-weight:700}
+#cText{margin:0;font-size:15px;line-height:1.6;color:#333}
+.cAct{display:flex;justify-content:space-between;align-items:center}
+#cSkip{font-size:14px;color:#666}
+#cNext{padding:10px 18px;border-radius:10px;background:#111;color:var(--tx);font-size:14px;font-weight:600;display:flex;gap:8px;align-items:center}#cNext kbd{color:#888}
+.cSteps{position:fixed;top:120px;left:24px;display:flex;flex-direction:column;gap:10px;width:240px}
+.cSteps div{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--dim)}
+.cSteps i{width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font:600 10px var(--mono);font-style:normal;flex:none}
+.cSteps .cur{color:var(--tx)}.cSteps .cur i{border-color:var(--ac)}
+.cSteps .done{color:var(--mu)}.cSteps .done i{background:var(--ac);border-color:var(--ac);color:var(--aci)}
+.coachFocus{outline:2px solid var(--ac)!important;outline-offset:6px}
+body.touch .cCard{bottom:auto;top:64px}
+body.touch .cSteps{display:none}
+
+/* ---------- RWD ---------- */
+@media (max-width:860px),(max-height:520px){
+  .wrap{padding:22px 18px 26px;gap:22px;padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}
+  .homeGrid,.onGrid{grid-template-columns:minmax(0,1fr);gap:16px}
+  .cfg{margin-top:0;padding:18px}
+  h1{font-size:30px}.homeL{gap:16px}
+  #home,#online{background:rgba(13,14,14,.95)}
+  .opp{padding:13px 16px;min-height:56px}.opp kbd,#resumeCard kbd{display:none}
+  .tiles b{width:64px;height:76px;font-size:40px}
+  .linkRow{flex-direction:column}
+  .steps span{font-size:11px}
+  .onFoot>div{flex:1;justify-content:flex-end}
+  .pauseGrid{padding:24px 20px;gap:24px}.pL h2{font-size:28px}
+  #pause{background:rgba(8,9,9,.93)}
+  .plist button{padding:13px 16px}
+  .rIn{padding:28px 16px;gap:18px}.rIn h2{font-size:30px}.big{font-size:52px}.big i{margin:0 10px}.rScore{gap:18px}
+  .stats{padding:2px 16px}.srow{padding:9px 0;grid-template-columns:1fr 70px 70px}
+  .cSteps{display:none}.cCard{padding:14px 16px;gap:6px}#cText{font-size:13px;line-height:1.5}#cTitle{font-size:17px}
+}
+@media (max-height:520px) and (orientation:landscape){ /* 手機橫放：首頁左右兩欄，「開始」不用往下捲 */
+  .wrap{padding-top:14px;padding-bottom:14px;gap:12px}
+  .homeGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+  h1{font-size:22px}.homeL{gap:8px}.homeL p{font-size:13px;margin-top:2px}
+  .opps{gap:2px}.opp{padding:8px 12px;min-height:0}.opp b{font-size:15px}.opp small{font-size:11px}.opps hr{margin:2px 12px}
+  .cfg{padding:12px 14px;gap:10px}.cfg h3{font-size:16px}.fld{gap:6px}
+  .rules button{padding:8px 10px}.rules button.on{padding:7.5px 9.5px}.rules small{display:none}
+  .seg button{padding:7px 10px}.primary{padding:11px 18px}.cfgNote{font-size:12px}
+}
+@media (max-height:400px) and (orientation:landscape){.cfg{gap:7px;padding:10px 12px}.fld{gap:4px}.cfg .lbl{font-size:11px}.wrap{gap:8px;padding-top:10px}}
+@media (max-width:640px){
+  .mbox{flex-direction:column;height:100%}
+  .mnav{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--ln);padding:12px 70px 12px 12px;overflow-x:auto;align-items:center}
+  .mnav h3{padding:0 8px 0 4px}
+  .mbody{padding:20px}.mclose{top:12px;right:12px}
+  .keys.two{grid-template-columns:auto 1fr}
+  .mbox.help{padding:22px 20px}
+}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
 </script>
 </head>
-<body>
-<div id="hud"></div>
-<div id="msg"></div>
-<div id="toast"></div>
-<div id="hint"></div>
-<div id="helpPanel" class="panel"><div class="keys"></div></div>
-<div id="menu" class="on"><div class="panel">
-  <h1>3D 美式撞球</h1>
-  <div class="local">
-    <div class="sub">選一個模式開始。遊戲中按 Esc 回到這裡。</div>
-    <div id="modes"></div>
-    <h2>連線對戰</h2>
-    <div class="netbox">
-      <div class="nrow"><b>開房間</b><div class="seg" id="segGame"><button data-v="8" class="on">8 號球</button><button data-v="9">9 號球</button></div>
-        <div class="seg" id="segRace"><button data-v="1">搶 1 局</button><button data-v="3" class="on">搶 3 局</button><button data-v="5">搶 5 局</button></div><button id="create">建立房間</button></div>
-      <div class="nrow"><b>加入房間</b><input id="room" placeholder="輸入 4 碼房號" maxlength="4" autocomplete="off"><button id="join">加入</button></div>
-      <div id="netMsg"></div>
+<body class="inmenu">
+<div id="hud">
+  <div id="modeLabel"></div>
+  <div id="topC"><div id="board"></div><div id="info"></div></div>
+  <div id="topR"><div id="netBadge" class="hbtn badge" hidden></div><button id="fsBtn" class="hbtn t-only">全螢幕</button><button id="viewBtn" class="hbtn t-only">俯視</button><button id="pauseBtn" class="hbtn"><span class="bars t-only"><i></i><i></i></span><span class="d-only">暫停</span><kbd class="d-only">ESC</kbd></button></div>
+  <div id="pots"></div>
+  <div id="foul"><div class="fh"><span class="tag">犯規</span><span id="foulWhy"></span></div><div id="foulTitle"></div><div id="foulDesc"></div><div class="fbar"><i></i></div></div>
+  <div class="play">
+    <div id="tipBox"><div class="cueball"><i id="tipDot"></i></div><div class="tinfo"><div class="tv"><div><small>打點</small><b id="tipName">中心</b></div><div><small>仰角</small><b id="elevVal">3°</b></div></div><div class="tkeys d-only">←↑→↓ 打點 · Q/E 仰角 · C 歸零</div></div></div>
+    <div id="power"><div class="plab"><span>力道</span><b id="powVal">0%</b></div><div class="ptrack"><span class="pmax"></span><div id="powFill"></div><i id="powLast"></i></div><div class="plab"><span></span><span id="lastLab"></span></div></div>
+    <div id="hint"></div>
+    <div id="keyHints"><kbd>V</kbd><span>俯視</span><kbd>H</kbd><span>輔助線</span><kbd>P</kbd><span>重播上一桿</span><kbd>TAB</kbd><span>全部按鍵</span></div>
+    <div id="tpow" class="t-only"><b id="tpowVal">0%</b><div class="tt"><div id="tpowFill"></div><div id="tpowKnob"></div></div><small>下拉<br>蓄力</small></div>
+    <div id="tbar" class="t-only"><button id="moveBtn" class="hbtn">移動母球</button><button id="fineBtn" class="hbtn">微調瞄準</button></div>
+  </div>
+</div>
+<div id="rotate"><span>把手機橫放，視野會更寬。</span><button id="rotateX">知道了</button></div>
+
+<div id="tipPad"><div class="padBox">
+  <div id="padBall" class="cueball"><i id="padDot"></i></div>
+  <div class="padSide">
+    <div><div class="lbl">打點</div><div style="font-size:20px;font-weight:600;margin-top:4px" id="padName">中心</div></div>
+    <div class="lbl">拖曳紅點：上＝高桿（跟進）、下＝低桿（拉回）、左右＝塞球</div>
+    <div><div class="lbl">球桿仰角 <span id="padElevV" style="font-family:var(--mono);color:var(--tx)"></span></div><div class="rng"><input type="range" id="padElev" min="3" max="60" step="1"></div></div>
+    <div class="row"><button id="padReset" class="ghost">歸零</button><button id="padDone" class="primary">完成</button></div>
+  </div>
+</div></div>
+
+<div id="coach"><div class="cSteps" id="cSteps"></div><div class="cCard"><div class="cTop"><span id="cNum"></span><div class="cDots" id="cDots"></div></div><h4 id="cTitle"></h4><p id="cText"></p><div class="cAct"><button id="cSkip">略過教學</button><button id="cNext">下一步</button></div></div></div>
+
+<div id="result"><div class="rIn">
+  <div><div class="eyebrow" id="resEyebrow"></div><h2 id="resTitle"></h2></div>
+  <div class="rScore"><div class="rp"><b id="resN0"></b><small id="resG0"></small></div><div class="big" id="resScore"></div><div class="rp r"><b id="resN1"></b><small id="resG1"></small></div></div>
+  <div class="racks" id="resRacks"></div>
+  <div class="card stats" id="resStats"></div>
+  <div class="ract"><button id="resReplay" class="ghost">重播最後一桿<kbd class="d-only">P</kbd></button><button id="resHome" class="ghost">回主選單</button><button id="resNext" class="primary">再來一場<kbd class="d-only">R</kbd></button></div>
+  <p id="resNote"></p>
+</div></div>
+
+<div id="home" class="scr"><div class="wrap">
+  <header class="top"><div class="brand">POOL·3D</div><div class="tbtns"><button class="pill" data-open="help">操作說明</button><button class="pill" data-open="settings">設定</button></div></header>
+  <div class="homeGrid">
+    <div class="homeL">
+      <div><h1>3D 美式撞球</h1><p>跟誰打？</p><p id="iosTip" class="lbl" hidden>iPhone：點 Safari 的「分享」→「加入主畫面」，從主畫面開啟就是全螢幕。</p></div>
+      <div class="opps" id="opps">
+        <button class="opp" data-o="cpu"><span><b>對電腦</b><small>單人・挑戰 AI</small></span><kbd>1</kbd></button>
+        <button class="opp" data-o="local"><span><b>雙人同機</b><small>同一台裝置輪流擊球</small></span><kbd>2</kbd></button>
+        <button class="opp" data-o="online"><span><b>線上對戰</b><small>開房間，傳連結給朋友</small></span><kbd>3</kbd></button>
+        <hr>
+        <button class="opp" data-o="practice"><span><b>練習</b><small>無規則・隨時自由擺球</small></span><kbd>4</kbd></button>
+      </div>
+    </div>
+    <div class="card cfg">
+      <h3 id="cfgTitle"></h3>
+      <div class="fld" id="fRules"><div class="lbl">規則</div><div class="rules" id="rulesPick"><button data-g="8"><b>8 號球</b><small>分全色／花色，最後打 8 號</small></button><button data-g="9"><b>9 號球</b><small>先碰最小號，打進 9 號贏</small></button></div></div>
+      <div class="fld" id="fDiff"><div class="lbl">電腦難度</div><div class="seg" data-k="diff"><button data-v="0">輕鬆</button><button data-v="1">普通</button><button data-v="2">困難</button></div></div>
+      <div class="fld" id="fRace"><div class="lbl">賽制</div><div class="seg" data-k="race"><button data-v="1">單局</button><button data-v="3">搶 3</button><button data-v="5">搶 5</button></div></div>
+      <p class="cfgNote" id="cfgNote"></p>
+      <button id="startBtn" class="primary">開始<kbd class="d-only">ENTER</kbd></button>
+      <div id="onBtns"><button id="onCreate" class="primary">建立房間</button><button id="onJoin" class="ghost">用房號加入</button></div>
     </div>
   </div>
-  <div id="roomPanel">
-    <div class="rstat"><i></i><b id="rStat"></b></div>
-    <div id="rInfo"></div>
-    <div id="rScore"></div>
-    <div id="rLinkRow"><div class="rhelp">把這個連結傳給朋友，對方打開就會自動加入：</div><div class="rlink"><input id="rLink" readonly><button id="rCopy">複製邀請連結</button></div></div>
-    <div class="ract"><button id="rPlay">進入球桌</button><button id="rRetry" hidden>重新連線</button><button id="rLeave">離開對戰</button></div>
-  </div>
-  <button id="resume" hidden>繼續目前這局</button>
-  <h2>設定</h2>
-  <label><span>音量</span><input type="range" id="vol" min="0" max="1" step="0.05"></label>
-  <label><span>滑鼠靈敏度</span><input type="range" id="sens" min="0.3" max="2" step="0.05"></label>
-  <h2>操作</h2><div class="keys"></div>
+  <button id="resumeCard" hidden><i></i><span><b>繼續目前這局</b><small id="resumeSub"></small></span><kbd>ESC</kbd></button>
 </div></div>
-<div id="netBadge" hidden></div>
-<div id="power"><div></div><i></i></div>
-<div id="tip"><b></b><i></i></div>
+
+<div id="online" class="scr"><div class="wrap">
+  <header class="top"><button class="back" id="onBack"><span style="font-family:var(--mono)">←</span>線上對戰</button><div class="seg" id="onTabs"><button data-t="host">建立房間</button><button data-t="join">用房號加入</button></div></header>
+  <div class="steps" id="steps"></div>
+  <div class="onGrid">
+    <div class="onL">
+      <div id="hostPane" class="pane">
+        <div id="hostIdle" class="pane"><p>建立房間後會得到一組 4 碼房號和邀請連結。</p><div class="ruleRow" style="max-width:420px"><span class="lbl">規則</span><span id="createRule"></span></div><div><button id="create" class="primary" style="display:inline-flex">建立房間</button></div></div>
+        <div id="hostRoom" class="pane" style="gap:28px">
+          <div class="pane"><div class="lbl">房號</div><div class="tiles" id="codeTiles"></div></div>
+          <div class="pane"><p>把連結傳給朋友，打開就會自動加入。也可以直接告訴對方房號。</p><div class="linkRow"><input id="rLink" readonly><button id="rCopy" class="primary">複製邀請連結</button></div></div>
+        </div>
+      </div>
+      <div id="joinPane" class="pane">
+        <div class="lbl">輸入 4 碼房號</div>
+        <div class="codeRow"><input id="room" class="codeIn" maxlength="4" placeholder="····" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="join" class="primary">加入</button></div>
+        <p class="lbl" style="font-size:14px">或直接打開朋友傳來的邀請連結。</p>
+        <div id="joinState"></div>
+      </div>
+      <div id="netMsg"></div>
+    </div>
+    <div class="onR" id="onR"><div class="lbl">玩家</div><div class="pane" id="players" style="gap:10px"></div><div class="ruleRow"><span class="lbl">規則</span><span id="ruleTxt"></span></div></div>
+  </div>
+  <footer class="onFoot"><button id="rLeave" class="ghost danger">離開房間</button><div><span id="startNote"></span><button id="rRetry" class="ghost" hidden>重新連線</button><button id="rPlay" class="primary">開始對戰</button></div></footer>
+</div></div>
+
+<div id="pause" class="scr"><div class="pauseGrid">
+  <div class="pL">
+    <div><div class="eyebrow" id="pEyebrow">已暫停</div><h2 id="pTitle"></h2><p id="pSub"></p></div>
+    <div class="plist"><button id="pResume" class="pri">繼續<kbd class="d-only">ESC</kbd></button><button id="pRestart">重新開這一局<kbd class="d-only">R</kbd></button><button id="pRoom">房間與邀請連結</button><button data-open="settings">設定</button><button data-open="help">操作說明<kbd class="d-only">TAB</kbd></button><hr><button id="pQuit" class="danger">離開到主選單</button></div>
+  </div>
+  <div class="pR"><div class="lbl">台面狀態</div><div class="card" id="pTable"></div></div>
+</div></div>
+
+<div id="settings" class="modal"><div class="mbox">
+  <nav class="mnav" id="setNav"><h3>設定</h3><button data-st="game" class="on">遊戲</button><button data-st="ctrl">操作</button><button data-st="audio">音效</button><button data-st="keys" class="d-only">按鍵一覽</button></nav>
+  <div class="mbody">
+    <section data-st="game" class="on">
+      <div class="sgrp"><div class="lbl">瞄準輔助</div>
+        <button class="srow2" data-set="aim"><span><b>瞄準線與影子球</b><small>母球路徑與碰撞位置 · H</small></span><i class="sw"></i></button>
+        <button class="srow2" data-set="predict"><span><b>目標球與母球走向</b><small>撞擊後兩顆球的預測方向</small></span><i class="sw"></i></button>
+        <button class="srow2" data-set="mark"><span><b>9 號球目標提示</b><small>在下一顆該打的球上顯示號碼 · N</small></span><i class="sw"></i></button>
+      </div>
+      <div class="sgrp"><div class="lbl">擊球</div>
+        <button class="srow2" data-set="resetTip"><span><b>每桿打完打點歸零</b><small>關閉則保留上一桿的打點與仰角</small></span><i class="sw"></i></button>
+      </div>
+    </section>
+    <section data-st="ctrl">
+      <div class="sgrp"><div class="lbl">瞄準靈敏度（滑鼠與觸控拖曳）</div><div class="rng"><input type="range" id="sens" min="0.3" max="2" step="0.05"><output id="sensV"></output></div></div>
+      <div class="sgrp"><div class="lbl">新手教學</div><div style="display:flex;gap:12px;align-items:center;padding-top:6px"><button id="tutReset" class="ghost">下一局重看教學</button></div></div>
+    </section>
+    <section data-st="audio">
+      <div class="sgrp"><div class="lbl">音量</div><div class="rng"><input type="range" id="vol" min="0" max="1" step="0.05"><output id="volV"></output></div></div>
+    </section>
+    <section data-st="keys"><div class="keys" id="keysA"></div></section>
+  </div>
+  <button class="mclose" data-close>ESC</button>
+</div></div>
+
+<div id="help" class="modal"><div class="mbox help">
+  <h3>操作說明</h3>
+  <div class="keys two d-only" id="keysB"></div>
+  <div class="keys t-only" id="keysT"></div>
+  <button class="mclose" data-close>ESC</button>
+</div></div>
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -477,7 +834,7 @@ function step(dt) {
     for (const p of pockets) if (Math.hypot(b.x - p.x, b.z - p.z) < p.r || Math.abs(b.x) > L + 0.12 || Math.abs(b.z) > W + 0.12) {
       b.active = false; b.fall = { x: p.x, z: p.z, t: 0 }; b.vx = b.vz = b.vy = b.y = 0;
       sfx.pocket(p.x, p.z);
-      toast(b === cueBall ? '母球落袋！' : `● ${b.n} 號進袋`);
+      potToast(b === cueBall ? 0 : b.n);
       if (shot) b === cueBall ? (shot.scratch = true) : shot.potted.push(b.n);
       break;
     }
@@ -487,10 +844,13 @@ function step(dt) {
 // ---- 模式與規則 ----
 const MODES = ['8 號球・對電腦', '8 號球・雙人', '9 號球・對電腦', '9 號球・雙人', '練習'];
 let mode = 0;
+const cfg = { opp: 'cpu', game: 8, race: 3, diff: 1 };
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('pool-cfg') || '{}')); } catch {}
+const modeFromCfg = () => cfg.opp === 'practice' ? 4 : (cfg.game === 9 ? 2 : 0) + (cfg.opp === 'local' ? 1 : 0);
 const rules = () => mode < 2 ? 8 : mode < 4 ? 9 : 'practice';
 const cpuMode = () => mode === 0 || mode === 2;
 const cpuTurn = () => cpuMode() && game.cur === 1 && !game.over;
-const nameOf = i => net ? (i === net.me ? '你' : '對手') : cpuMode() && i === 1 ? '電腦' : `玩家 ${i + 1}`;
+const nameOf = i => net ? (i === net.me ? '你' : '對手') : cpuMode() ? (i ? '電腦' : '你') : `玩家 ${i + 1}`;
 const groupOf = n => n < 8 ? '全色' : n > 8 ? '花色' : '8';
 const remaining = g => balls.filter(b => b.active && b.n && groupOf(b.n) === g).length;
 const lowest = () => Math.min(...balls.filter(b => b.active && b.n).map(b => b.n));
@@ -519,10 +879,11 @@ let state = 'aim', ai = null;
 function newGame() {
   balls.forEach(hide);
   const r = rules();
-  Object.assign(game, { cur: net ? match.rack % 2 : 0, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
+  Object.assign(game, { cur: r === 'practice' ? 0 : match.rack % 2, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
   if (r === 9) rack9(); else rack8();
-  state = 'aim'; ai = null; rec = [];
-  flash(r === 'practice' ? '練習模式：隨時自由擺球' : (net ? `第 ${match.rack + 1} 局（搶 ${match.race}）　${nameOf(game.cur)} 開球` : `${MODES[mode]}　玩家 1 開球`));
+  state = 'aim'; ai = null; rec = []; result = null; lastPower = 0;
+  hideMsg();
+  flash(r === 'practice' ? '練習模式 · 母球可隨時自由擺放' : `第 ${match.rack + 1} 局 · ${nameOf(game.cur)} 開球`);
 }
 function respawnCue() {
   let x = -L / 2;
@@ -531,13 +892,12 @@ function respawnCue() {
 }
 function gameOver(text, winner) {
   game.over = true; state = 'over';
-  if (net && winner != null) {
-    match.score[winner]++;
-    text = `${text}　${scoreText()}${matchDone() ? `　🏆 ${nameOf(winner)} 贏得比賽` : ''}　按 R ${matchDone() ? '再來一場' : '下一局'}`;
-  } else text += '　按 R 再來一局';
-  flash(text, 1e9);
+  const p = game.cur, s = match.st[p];
+  if (shot && s) { s.pots += shot.potted.length; if (winner === p) { s.run += shot.potted.length; s.best = Math.max(s.best, s.run); } else s.fouls++; } // 8 號球提前／犯規落袋也算一次犯規
+  if (winner != null) { match.score[winner]++; match.hist.push(winner); }
+  const reason = rules() === 9 ? '打進 9 號球' : winner === p ? '8 號球落袋' : `${nameOf(p)} 提前或犯規打進 8 號`;
+  showResult(reason, winner);
 }
-
 function endShot() {
   for (const b of balls) b.wy = 0; // 停下後殘留的原地側旋歸零
   state = 'aim'; ai = null;
@@ -571,10 +931,18 @@ function end9() {
   turnResult(foul, !foul && shot.potted.length > 0);
 }
 function turnResult(foul, keep) {
+  const p = game.cur, s = match.st[p], n = shot.potted.length;
+  if (s) { s.pots += n; if (foul) s.fouls++; if (keep) { s.run += n; s.best = Math.max(s.best, s.run); } else s.run = 0; }
   if (!keep) game.cur = 1 - game.cur;
   game.ballInHand = foul;
-  const why = shot.scratch ? '母球落袋' : shot.firstHit == null ? '沒有碰到球' : '先碰到錯誤的球';
-  flash(foul ? `犯規！${why} → ${nameOf(game.cur)} 自由球` : keep ? `${nameOf(game.cur)} 繼續` : `換 ${nameOf(game.cur)}`);
+  const nm = nameOf(game.cur);
+  if (foul) {
+    const why = shot.scratch ? '母球落袋' : shot.firstHit == null ? '母球沒有碰到任何球' : `先碰到 ${shot.firstHit} 號球（${rules() === 9 ? `應先碰 ${shot.lowest} 號` : '不是合法目標球'}）`;
+    showFoul(why, `換 ${nm} 擊球 · 自由球`, `${nm === '你' ? '你' : nm}可以把母球擺在台面任何位置${isTouch ? '（點「移動母球」後拖曳）' : '（WASD 移動）'}。${rules() === 9 && shot.potted.includes(9) ? '9 號球已放回置球點。' : ''}`);
+  } else {
+    const grpNew = rules() === 8 && !shot.grp && game.groups[p];
+    flash(grpNew ? `分組確定 · ${nameOf(p)} 打${game.groups[p]}${keep ? '，繼續擊球' : ''}` : keep ? `${nm} 繼續擊球` : `換 ${nm} 擊球`);
+  }
 }
 
 // ---- 電腦對手 ----
@@ -633,7 +1001,7 @@ function aiPlan() {
     s = { yaw: Math.atan2(t.z - cueBall.z, t.x - cueBall.x), speed: 1.5 };
   }
   // ponytail: 難度只有一個旋鈕 —— 瞄準誤差 ±0.35°
-  return { yaw: s.yaw + (Math.random() - 0.5) * 0.012, power: toPower(s.speed) };
+  return { yaw: s.yaw + (Math.random() - 0.5) * [0.035, 0.012, 0.004][cfg.diff], power: toPower(s.speed) };
 }
 
 // ---- 輸入 / 鏡頭 ----
@@ -642,67 +1010,269 @@ let elev = 0.05; // 球桿仰角 (rad)
 const tip = { x: 0, y: 0 }; // 打點：-1..1，1 = 偏離中心 0.5R（再多就滑桿）
 const keys = {};
 const canvas = renderer.domElement;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches || new URLSearchParams(location.search).has('touch');
+document.body.classList.toggle('touch', isTouch);
 const locked = () => document.pointerLockElement === canvas;
-const lockPointer = () => { try { canvas.requestPointerLock()?.catch?.(() => {}); } catch {} };
-canvas.addEventListener('click', () => { if (!menuOpen && !locked()) lockPointer(); });
-document.addEventListener('pointerlockchange', () => { if (!locked()) { charging = false; openMenu(true); } });
+const lockPointer = () => { if (isTouch) return; try { canvas.requestPointerLock()?.catch?.(() => {}); } catch {} };
+let lastUnlock = 0;
+canvas.addEventListener('click', () => { if (!menuOpen && !locked() && state !== 'over') lockPointer(); });
+document.addEventListener('pointerlockchange', () => {
+  if (locked()) return;
+  charging = false; lastUnlock = performance.now();
+  if (!menuOpen && state !== 'over') showScreen('pause');
+});
 
-// 選單：模式、繼續、音量、靈敏度（設定記在這台瀏覽器）
-const settings = { vol: 0.8, sens: 1, mark: true };
+// 設定記在這台瀏覽器
+const settings = { vol: 0.8, sens: 1, mark: true, aim: true, predict: true, resetTip: true, tutDone: false };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('pool-settings') || '{}')); } catch {}
 const saveSettings = () => { try { localStorage.setItem('pool-settings', JSON.stringify(settings)); } catch {} };
-master.gain.value = settings.vol;
-const menuEl = document.getElementById('menu'), resumeBtn = document.getElementById('resume');
-let menuOpen = true, started = false;
-function openMenu(v) {
-  menuOpen = v; menuEl.classList.toggle('on', v); charging = false;
-  resumeBtn.hidden = !started || !!net; netUiKey = '';
-  document.querySelectorAll('#modes button').forEach((b, i) => b.classList.toggle('cur', started && i === mode));
+const saveCfg = () => { try { localStorage.setItem('pool-cfg', JSON.stringify(cfg)); } catch {} };
+master.gain.value = settings.vol; helpers = settings.aim;
+
+let menuOpen = true, started = false, screen = 'home', dlg = null, passiveHelp = false;
+let touchPow = false, moveMode = false, fine = false, aimMoved = 0;
+const OPP = { cpu: '對電腦', local: '雙人同機', online: '線上對戰', practice: '練習' }, DIFF = ['輕鬆', '普通', '困難'];
+function modeLabel() {
+  const r = rules();
+  if (net) return `線上對戰 · ${r} 號球`;
+  if (r === 'practice') return '練習';
+  return `${r} 號球 · ${cpuMode() ? '對電腦 · ' + DIFF[cfg.diff] : '雙人同機'}`;
 }
-function play() { ac.resume(); started = true; openMenu(false); lockPointer(); }
-document.getElementById('modes').innerHTML = MODES.map((m, i) => `<button data-i="${i}">${m}</button>`).join('');
-document.getElementById('modes').addEventListener('click', e => {
-  const i = e.target.dataset?.i; if (i == null) return;
-  leaveNet(); mode = +i; newGame(); play();
-});
-resumeBtn.addEventListener('click', play);
-for (const [id, key, apply] of [['vol', 'vol', v => (master.gain.value = v)], ['sens', 'sens', () => {}]]) {
-  const el = document.getElementById(id); el.value = settings[key];
-  el.addEventListener('input', () => { settings[key] = +el.value; apply(+el.value); saveSettings(); });
+function newSt() { return { pots: 0, fouls: 0, run: 0, best: 0 }; }
+function resetMatch(race = match.race) { Object.assign(match, { race, score: [0, 0], rack: 0, hist: [], st: [newSt(), newSt()] }); }
+
+// ---- 畫面切換 ----
+function syncMenu() {
+  menuOpen = !!screen || (!!dlg && !passiveHelp);
+  document.body.classList.toggle('inmenu', menuOpen);
+  charging = false; touchPow = false;
+  if (menuOpen && locked()) document.exitPointerLock();
+  netUiKey = ''; renderHome(); renderPause();
 }
+function showScreen(s) {
+  screen = s;
+  for (const id of ['home', 'online', 'pause']) $(id).classList.toggle('on', id === s);
+  if (s) $(s).scrollTop = 0;
+  syncMenu();
+}
+function openModal(m, passive = false) {
+  dlg = m; passiveHelp = !!m && passive;
+  $('settings').classList.toggle('on', m === 'settings'); $('help').classList.toggle('on', m === 'help');
+  $('help').classList.toggle('passive', passiveHelp);
+  syncMenu();
+}
+const closeModal = () => openModal(null);
+// 手機全螢幕：Android 用 Fullscreen API 並鎖橫向；iPhone 不支援，改提示「加入主畫面」（manifest + apple meta 會以全螢幕開啟）
+const fsEl = document.documentElement, canFS = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+const isIOS = /iPhone|iPod/.test(navigator.userAgent), standalone = navigator.standalone || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+const isFS = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function goFullscreen(on = true) {
+  if (!canFS) return;
+  if (!on) return (document.exitFullscreen || document.webkitExitFullscreen)?.call(document)?.catch?.(() => {});
+  if (isFS()) return;
+  Promise.resolve((fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl, { navigationUI: 'hide' }))
+    .then(() => window.screen.orientation?.lock?.('landscape')).catch(() => {});
+}
+$('fsBtn').hidden = !isTouch || !canFS;
+$('fsBtn').addEventListener('click', () => goFullscreen(!isFS()));
+document.addEventListener('fullscreenchange', () => $('fsBtn').classList.toggle('on', isFS()));
+$('iosTip').hidden = !(isIOS && !standalone);
+function play() {
+  if (isTouch) goFullscreen();
+  ac.resume(); started = true; openModal(null); showScreen(null); lockPointer();
+  if (!settings.tutDone && !net && coachI < 0) coachStart();
+}
+function startGame() {
+  if (cfg.opp === 'online') return;
+  leaveNet(); mode = modeFromCfg(); resetMatch(cfg.opp === 'practice' ? 1 : cfg.race); newGame(); play();
+}
+function nextRack() {
+  if (net && (!net.open || !game.over)) return;
+  if (game.over) { if (matchDone()) resetMatch(); else match.rack++; }
+  newGame(); if (net) sendSync(true);
+  if (!menuOpen) lockPointer();
+}
+function startReplay() { if ((state === 'aim' || state === 'over') && rec.length) { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }
+function fire() { if (power > 0.02) { send({ t: 'shot', y: yaw, p: power, tip: { ...tip }, el: elev, x: cueBall.x, z: cueBall.z }); shoot(power); } else power = 0; }
+function leaveToHome() { if (net) { leaveNet(); started = false; } $('netMsg').textContent = ''; showScreen('home'); }
+function onEscape() {
+  if (performance.now() - lastUnlock < 400) return;
+  if ($('tipPad').classList.contains('on')) return $('tipPad').classList.remove('on');
+  if (dlg) return closeModal();
+  if (screen === 'pause') return play();
+  if (screen === 'online') { if (net && started) play(); else if (!net) showScreen('home'); return; }
+  if (screen === 'home') { if (started && !net) play(); return; }
+  showScreen('pause');
+}
+
+// ---- 主選單 ----
+function renderHome() {
+  document.querySelectorAll('#opps [data-o]').forEach(b => b.classList.toggle('on', b.dataset.o === cfg.opp));
+  document.querySelectorAll('#rulesPick [data-g]').forEach(b => b.classList.toggle('on', +b.dataset.g === cfg.game));
+  document.querySelectorAll('.seg[data-k]').forEach(s => s.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.v === cfg[s.dataset.k])));
+  const o = cfg.opp;
+  $('cfgTitle').textContent = OPP[o];
+  $('fRules').hidden = o === 'practice'; $('fDiff').hidden = o !== 'cpu'; $('fRace').hidden = o === 'practice';
+  $('cfgNote').textContent = { cpu: '', local: '兩位玩家在同一台裝置輪流擊球，開球權每局輪替。', online: '建立房間會產生邀請連結；有房號就直接加入。', practice: '沒有規則與勝負，母球隨時可以自由擺放。' }[o];
+  $('startBtn').hidden = o === 'online'; $('onBtns').hidden = o !== 'online';
+  $('resumeCard').hidden = !started || !!net;
+  if (started && !net) $('resumeSub').textContent = modeLabel() + (rules() !== 'practice' ? ` · ${match.score[0]}–${match.score[1]}` : '');
+}
+$('opps').addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (!b) return; cfg.opp = b.dataset.o; saveCfg(); renderHome(); });
+$('rulesPick').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; cfg.game = +b.dataset.g; saveCfg(); renderHome(); });
+document.querySelectorAll('.seg[data-k]').forEach(s => s.addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; cfg[s.dataset.k] = +b.dataset.v; saveCfg(); renderHome(); }));
+$('startBtn').addEventListener('click', startGame);
+$('onCreate').addEventListener('click', () => { started = false; onTab = 'host'; $('netMsg').textContent = ''; hostRoom(cfg.game, cfg.race); showScreen('online'); });
+$('onJoin').addEventListener('click', () => { onTab = 'join'; $('netMsg').textContent = ''; showScreen('online'); if (!isTouch) setTimeout(() => $('room').focus(), 50); });
+$('resumeCard').addEventListener('click', play);
+document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openModal(b.dataset.open)));
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal));
+for (const id of ['settings', 'help']) $(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ---- 暫停 / 結算 ----
+$('pResume').addEventListener('click', play);
+$('pRestart').addEventListener('click', () => { newGame(); play(); });
+$('pRoom').addEventListener('click', () => { onTab = net?.me === 1 ? 'join' : 'host'; showScreen('online'); });
+$('pQuit').addEventListener('click', leaveToHome);
+$('resReplay').addEventListener('click', startReplay);
+$('resHome').addEventListener('click', leaveToHome);
+$('resNext').addEventListener('click', nextRack);
+$('pauseBtn').addEventListener('click', () => showScreen('pause'));
+$('foul').addEventListener('click', () => { foulT = 0; });
+
+// ---- 設定 ----
+function refreshToggles() { document.querySelectorAll('[data-set]').forEach(el => el.classList.toggle('on', !!settings[el.dataset.set])); }
+document.querySelectorAll('[data-set]').forEach(el => el.addEventListener('click', () => {
+  const k = el.dataset.set; settings[k] = !settings[k]; if (k === 'aim') helpers = settings.aim; saveSettings(); refreshToggles();
+}));
+for (const [id, apply, fmt] of [['vol', v => (master.gain.value = v), v => Math.round(v * 100) + '%'], ['sens', () => {}, v => (+v).toFixed(2) + '×']]) {
+  const el = $(id), out = $(id + 'V'); el.value = settings[id]; out.textContent = fmt(settings[id]);
+  el.addEventListener('input', () => { settings[id] = +el.value; apply(+el.value); out.textContent = fmt(+el.value); saveSettings(); });
+}
+$('setNav').addEventListener('click', e => { const t = e.target.closest('[data-st]')?.dataset.st; if (!t) return; document.querySelectorAll('#settings [data-st]').forEach(x => x.classList.toggle('on', x.dataset.st === t)); });
+$('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSettings(); $('tutReset').textContent = '已設定，下次開局會顯示'; });
+
 const KEYS = [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
-  ['H', '輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局'], ['M', '切換模式'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明']];
-document.querySelectorAll('.keys').forEach(el => (el.innerHTML = KEYS.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('')));
-const helpPanel = document.getElementById('helpPanel');
+  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明']];
+const TOUCH = [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
+  ['移動母球', '自由球時開啟，拖曳擺放母球'], ['微調瞄準', '降低拖曳靈敏度，方便對準'], ['右上按鈕', '俯視 / 暫停']];
+const keysHtml = list => list.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('');
+$('keysA').innerHTML = $('keysB').innerHTML = keysHtml(KEYS); $('keysT').innerHTML = keysHtml(TOUCH);
+
+// ---- 滑鼠 / 鍵盤 ----
 addEventListener('mousemove', e => {
   if (!locked()) return;
   const k = (e.shiftKey ? 0.15 : 1) * settings.sens;
-  if (!notMine()) yaw += e.movementX * 0.0025 * k;
-  pitch = Math.min(1.3, Math.max(0.03, pitch + e.movementY * 0.002 * k));
+  if (!notMine()) { yaw += e.movementX * 0.0025 * k; aimMoved += Math.abs(e.movementX * 0.0025 * k); if (aimMoved > 0.5) coachEvent('aim'); }
+  pitch = clamp(pitch + e.movementY * 0.002 * k, 0.03, 1.3);
 });
-addEventListener('wheel', e => { dist = Math.min(2.5, Math.max(0.3, dist * (1 + e.deltaY * 0.001))); });
+addEventListener('wheel', e => { if (!menuOpen) dist = clamp(dist * (1 + e.deltaY * 0.001), 0.3, 2.5); });
 addEventListener('mousedown', e => { if (locked() && !menuOpen && e.button === 0 && state === 'aim' && !notMine()) { charging = true; power = 0; } });
-addEventListener('mouseup', e => { if (e.button === 0 && charging) { charging = false; if (power > 0.02) { send({ t: 'shot', y: yaw, p: power, tip: { ...tip }, el: elev, x: cueBall.x, z: cueBall.z }); shoot(power); } else power = 0; } });
+addEventListener('mouseup', e => { if (e.button === 0 && charging && !touchPow) { charging = false; fire(); } });
 addEventListener('keydown', e => {
   keys[e.code] = true;
-  if (e.code === 'Tab' || e.code === 'Slash') { e.preventDefault(); helpPanel.classList.toggle('on'); } // 不用按 Shift
-  if (e.code === 'Escape' && !locked() && started) menuOpen ? play() : openMenu(true);
-  if (menuOpen) return;
-  if (e.code === 'KeyV') topView = !topView;
-  if (e.code === 'KeyR') {
-    if (!net) return newGame();
-    if (!net.open || !game.over) return; // 連線中只有一局結束後才能開下一局
-    if (matchDone()) Object.assign(match, { score: [0, 0], rack: 0 }); else match.rack++;
-    newGame(); sendSync(true);
+  if (e.target.tagName === 'INPUT' && e.code !== 'Escape') return;
+  if (e.code === 'Tab' || e.code === 'Slash') { e.preventDefault(); if (dlg === 'help') closeModal(); else openModal('help', !menuOpen); return; }
+  if (e.code === 'Escape') return onEscape();
+  if (dlg) return;
+  if (screen === 'home') {
+    const o = { Digit1: 'cpu', Digit2: 'local', Digit3: 'online', Digit4: 'practice' }[e.code];
+    if (o) { cfg.opp = o; saveCfg(); renderHome(); }
+    if (e.code === 'Enter') cfg.opp === 'online' ? $('onCreate').click() : startGame();
+    return;
   }
+  if (screen === 'pause' && e.code === 'KeyR' && !net) { newGame(); play(); return; }
+  if (menuOpen) return;
+  if (e.code === 'Enter' && coachI >= 0) { coachI++; renderCoach(); }
+  if (e.code === 'KeyV') { topView = !topView; coachEvent('view'); }
+  if (e.code === 'KeyR') nextRack();
   if (e.code === 'KeyC') { tip.x = tip.y = 0; elev = 0.05; }
-  if (e.code === 'KeyH') helpers = !helpers;
-  if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); toast(settings.mark ? '目標提示：開' : '目標提示：關'); }
-  if (e.code === 'KeyM' && !net) { mode = (mode + 1) % MODES.length; newGame(); }
-  if (e.code === 'KeyP' && (state === 'aim' || state === 'over') && rec.length) replay = { t: 0, i: 0, prev: state }, state = 'replay';
+  if (e.code === 'KeyH') { settings.aim = helpers = !settings.aim; saveSettings(); refreshToggles(); flash(helpers ? '瞄準輔助線：開' : '瞄準輔助線：關', 1.2); }
+  if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); refreshToggles(); flash(settings.mark ? '目標提示：開' : '目標提示：關', 1.2); }
+  if (e.code === 'KeyP') startReplay();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ---- 觸控 ----
+const canPlace = () => state === 'aim' && (game.ballInHand || game.breakShot) && !notMine();
+function moveCue(mx, my) {
+  let wx, wz;
+  if (topView) { wx = mx * 0.0028; wz = my * 0.0028; }
+  else { const dx = Math.cos(yaw), dz = Math.sin(yaw), f = -my * 0.002, r = mx * 0.002; wx = dx * f - dz * r; wz = dz * f + dx * r; }
+  const nx = clamp(cueBall.x + wx, -L + R, game.breakShot ? -L / 2 : L - R), nz = clamp(cueBall.z + wz, -W + R, W - R);
+  if (!overlaps(nx, nz, cueBall)) { cueBall.x = nx; cueBall.z = nz; send({ t: 'aim', y: yaw, x: cueBall.x, z: cueBall.z }); }
+}
+const ptrs = new Map(); let pinch0 = 0, dist0 = 0;
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || menuOpen) return;
+  canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = dist; }
+});
+canvas.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const mx = e.clientX - p.x, my = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+  if (ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; if (pinch0) dist = clamp(dist0 * pinch0 / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), 0.3, 2.5); return; }
+  if (moveMode && canPlace()) return moveCue(mx, my);
+  const k = (fine ? 0.15 : 1) * settings.sens;
+  if (state === 'aim' && !notMine()) { yaw += mx * 0.005 * k; aimMoved += Math.abs(mx * 0.005 * k); if (aimMoved > 0.5) coachEvent('aim'); }
+  pitch = clamp(pitch + my * 0.004 * k, 0.03, 1.3);
+});
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; };
+canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+{ // 右側力道條：往下拉 = 往後拉桿
+  const tp = $('tpow'); let y0 = 0;
+  tp.addEventListener('pointerdown', e => { if (menuOpen || state !== 'aim' || notMine()) return; tp.setPointerCapture(e.pointerId); touchPow = charging = true; power = 0; y0 = e.clientY; });
+  tp.addEventListener('pointermove', e => { if (touchPow) power = clamp((e.clientY - y0) / (tp.querySelector('.tt').clientHeight * 0.9), 0, 1); });
+  tp.addEventListener('pointerup', () => { if (!touchPow) return; touchPow = charging = false; fire(); });
+  tp.addEventListener('pointercancel', () => { touchPow = charging = false; power = 0; });
+}
+$('viewBtn').addEventListener('click', () => { topView = !topView; coachEvent('view'); });
+$('moveBtn').addEventListener('click', () => { moveMode = !moveMode; });
+$('fineBtn').addEventListener('click', () => { fine = !fine; });
+$('rotateX').addEventListener('click', () => { $('rotate').hidden = true; });
+{ // 打點面板
+  const pad = $('tipPad'), ball = $('padBall'), el = $('padElev');
+  const set = e => { const r = ball.getBoundingClientRect(); let x = ((e.clientX - r.left) / r.width - 0.5) * 4, y = -((e.clientY - r.top) / r.height - 0.5) * 4; const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } tip.x = x; tip.y = y; };
+  let drag = false;
+  ball.addEventListener('pointerdown', e => { drag = true; ball.setPointerCapture(e.pointerId); set(e); });
+  ball.addEventListener('pointermove', e => drag && set(e));
+  ball.addEventListener('pointerup', () => { drag = false; });
+  el.addEventListener('input', () => { elev = +el.value * Math.PI / 180; });
+  $('tipBox').addEventListener('click', () => { if (menuOpen) return; el.value = Math.round(elev * 180 / Math.PI); pad.classList.add('on'); });
+  $('padReset').addEventListener('click', () => { tip.x = tip.y = 0; elev = 0.05; el.value = 3; });
+  $('padDone').addEventListener('click', () => pad.classList.remove('on'));
+  pad.addEventListener('click', e => { if (e.target === pad) pad.classList.remove('on'); });
+}
+
+// ---- 新手引導 ----
+const COACH = [
+  { k: 'aim', t: '瞄準', d: '左右移動滑鼠瞄準，上下移動調整視角。按住 Shift 可以微調。', m: '單指在球台上左右拖曳瞄準、上下拖曳調整視角；雙指捏合縮放鏡頭。' },
+  { k: 'tip', t: '打點與仰角', d: '方向鍵移動左下角白球上的紅點：上＝高桿（跟進）、下＝低桿（拉回）、左右＝塞球。Q / E 調整球桿仰角。', m: '點左下角的白球，拖曳紅點：上＝高桿、下＝低桿、左右＝塞球。', fd: '#tipBox', ft: '#tipBox' },
+  { k: 'shoot', t: '蓄力出桿', d: '按住滑鼠左鍵蓄力，放開就出桿。力道條上的白線是上一桿的力道。試著打一桿。', m: '按住右側力道條往下拉蓄力，放手出桿；拉回頂端可以取消。試著打一桿。', fd: '#power', ft: '#tpow' },
+  { k: 'view', t: '視角與暫停', d: 'V 切換俯視、P 重播上一桿、Esc 暫停、Tab 隨時查看全部按鍵。', m: '右上角可以切換俯視與暫停。暫停選單裡有完整操作說明。', fd: '#keyHints', ft: '#topR' },
+];
+let coachI = -1;
+function coachStart() { coachI = 0; renderCoach(); }
+function coachEvent(k) { if (coachI >= 0 && COACH[coachI]?.k === k) { coachI++; renderCoach(); } }
+function coachEnd() { coachI = -1; settings.tutDone = true; saveSettings(); renderCoach(); }
+function renderCoach() {
+  document.querySelectorAll('.coachFocus').forEach(el => el.classList.remove('coachFocus'));
+  if (coachI >= COACH.length) return coachEnd();
+  $('coach').classList.toggle('on', coachI >= 0);
+  if (coachI < 0) return;
+  const c = COACH[coachI], last = coachI === COACH.length - 1;
+  $('cNum').textContent = `${coachI + 1} / ${COACH.length}`;
+  $('cDots').innerHTML = COACH.map((_, i) => `<i class="${i <= coachI ? 'on' : ''}"></i>`).join('');
+  $('cTitle').textContent = c.t; $('cText').textContent = isTouch ? c.m : c.d;
+  $('cNext').innerHTML = (last ? '完成' : '下一步') + (isTouch ? '' : '<kbd>ENTER</kbd>');
+  $('cSteps').innerHTML = COACH.map((s, i) => `<div class="${i < coachI ? 'done' : i === coachI ? 'cur' : ''}"><i>${i < coachI ? '✓' : ''}</i>${s.t}</div>`).join('');
+  const f = isTouch ? c.ft : c.fd; if (f) $(f.slice(1))?.classList.add('coachFocus');
+}
+$('cNext').addEventListener('click', () => { coachI++; renderCoach(); });
+$('cSkip').addEventListener('click', coachEnd);
 
 // 出桿：先播放球桿往前送的動作，桿頭碰到球才真正施力
 let stroke = null, fovKick = 0, lastPower = 0;
@@ -725,12 +1295,12 @@ function launch({ p, tip: t, elev: el }) {
   // 往下的分量把球壓進台面再彈起（台面反彈約 0.5）→ 跳球
   const vy = 0.5 * speed * -d[1]; if (vy > 0.05) cueBall.vy = vy;
   shotBy = game.cur;
-  shot = { firstHit: null, potted: [], scratch: false, onEight: !!g && remaining(g) === 0, lowest: lowest() };
+  shot = { firstHit: null, potted: [], scratch: false, onEight: !!g && remaining(g) === 0, lowest: lowest(), grp: g };
   game.ballInHand = rules() === 'practice'; game.breakShot = false;
-  tip.x = tip.y = 0; elev = 0.05; // 每桿打完，打點與仰角回到中心
+  if (settings.resetTip) { tip.x = tip.y = 0; elev = 0.05; }
   state = 'moving'; rec = []; simT = 0; power = 0;
   sfx.cue(speed); lastPower = p; camDir.set(Math.cos(yaw), 0, Math.sin(yaw));
-  fovKick = 2 + 5 * p;
+  fovKick = 2 + 5 * p; if (!notMine()) coachEvent('shoot');
 }
 
 // ---- 重播 ----
@@ -773,7 +1343,7 @@ function updateAim(dx, dz) {
   setLine(aimLine, cueBall.x, cueBall.z, gx, gz);
   ghost.position.set(gx, R, gz);
   objLine.visible = cueLine.visible = false;
-  if (!hit || !helpers) return;
+  if (!hit || !helpers || !settings.predict) return;
   const nx = (hit.x - gx) / (2 * R), nz = (hit.z - gz) / (2 * R), dot = dx * nx + dz * nz;
   objLine.visible = true;
   setLine(objLine, hit.x, hit.z, hit.x + nx * 0.3, hit.z + nz * 0.3);
@@ -799,49 +1369,127 @@ cuePart(0.0065, 0.011, 1.0, 0xd9b77e, -0.03);
 cuePart(0.011, 0.0145, 0.42, 0x2a0e04, -1.03);
 
 // ---- HUD ----
-const elevEl = document.querySelector('#tip b'), tipDot = document.querySelector('#tip i'), toastEl = document.getElementById('toast');
-const hudEl = document.getElementById('hud'), msgEl = document.getElementById('msg'), powEl = document.querySelector('#power div');
-const hintEl = document.getElementById('hint'), powBox = document.getElementById('power'), powMark = document.querySelector('#power i');
-let msgTimer = 0, toastTimer = 0;
-function flash(t, dur = 2.5) { msgEl.textContent = t; msgEl.style.opacity = 1; msgTimer = dur; }
-function toast(t) { toastEl.textContent = t; toastEl.classList.add('on'); toastTimer = 1.2; }
-const chip = (n, on, target) => {
-  const col = COLORS[n > 8 ? n - 8 : n], bg = n > 8 ? `linear-gradient(${COLORS[0]} 27%,${col} 27% 73%,${COLORS[0]} 73%)` : col;
-  return `<span class="chip${on ? '' : ' off'}${target ? ' target' : ''}" style="background:${bg}"><b>${n}</b></span>`;
-};
+const $t = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };
+const ballBg = n => { const col = COLORS[n > 8 ? n - 8 : n]; return n > 8 ? `linear-gradient(${COLORS[0]} 27%,${col} 27% 73%,${COLORS[0]} 73%)` : col; };
+const chip = (n, off, tgt) => `<span class="chip${off ? ' off' : ''}${tgt ? ' tgt' : ''}" style="background:${ballBg(n)}"><b>${n}</b></span>`;
 const potted = n => !balls[n].active;
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
-const playerRow = (i, extra) => `<div class="row${game.cur === i && !game.over ? ' cur' : ''}"><span class="name">${nameOf(i)}</span>${extra}</div>`;
-let hudHtml = '';
-function updateHud() {
-  const r = rules(), out = [`<div class="mode">${net ? `連線對戰・${rules()} 號球・第 ${match.rack + 1} 局` : MODES[mode]}</div>`];
-  if (r === 8) out.push(...[0, 1].map(i => {
-    const g = game.groups[i];
-    if (!g) return playerRow(i, '<span class="grp">未分組</span>');
-    const nums = g === '全色' ? range(1, 7) : range(9, 15), done = nums.every(potted);
-    return playerRow(i, `<span class="grp">${g}</span>${nums.map(n => chip(n, potted(n))).join('')}${chip(8, potted(8), done)}`);
-  }));
-  if (r === 9) {
-    const lo = lowest();
-    out.push(...[0, 1].map(i => playerRow(i, '')), `<div class="row">${range(1, 9).map(n => chip(n, potted(n), n === lo)).join('')}</div>`);
-  }
-  if (r === 'practice') out.push(`<div class="row"><span class="grp">已進袋</span>${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`);
-  const html = out.join('');
-  if (html !== hudHtml) hudEl.innerHTML = hudHtml = html; // 只有內容變了才重畫 DOM
-  hintEl.textContent = hintText();
-  powEl.style.width = power * 100 + '%';
-  powBox.classList.toggle('max', power >= 1);
-  powMark.style.opacity = lastPower ? 0.8 : 0; powMark.style.left = lastPower * 100 + '%';
+const groupNums = g => g === '全色' ? range(1, 7) : range(9, 15);
+let msgT = 0, foulT = 0, boardCache = '', tableCache = '', result = null;
+function flash(t, dur = 2.2) { $('info').textContent = t; $('info').classList.add('on'); msgT = dur; }
+function showFoul(why, title, desc) {
+  $t('foulWhy', why); $t('foulTitle', title); $t('foulDesc', desc);
+  const f = $('foul'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); foulT = 3.2;
+  $('info').classList.remove('on'); msgT = 0;
 }
-function hintText() { // 只顯示當下用得到的操作
-  if (menuOpen) return '';
+function hideMsg() { msgT = foulT = 0; $('info').classList.remove('on'); $('foul').classList.remove('on'); }
+function tickMsg(dt) { if ((msgT -= dt) <= 0) $('info').classList.remove('on'); if ((foulT -= dt) <= 0) $('foul').classList.remove('on'); }
+function addPot(n, text) {
+  const box = $('pots'), el = document.createElement('div');
+  el.className = 'pot' + (n === 0 ? ' bad' : '');
+  el.innerHTML = (n != null ? `<span class="dot" style="background:${ballBg(n)}"></span>` : '') + text;
+  box.append(el); while (box.children.length > 5) box.firstChild.remove();
+  setTimeout(() => el.classList.add('out'), 1800); setTimeout(() => el.remove(), 2300);
+}
+function toast(t) { addPot(null, t); }
+function potToast(n) { addPot(n, n ? `${n} 號進袋` : '母球落袋'); }
+
+function boardHtml() {
+  const r = rules();
+  if (r === 'practice') return `<div class="pl one"><div class="plh"><span class="nm">練習</span><span class="grp">已進袋 ${range(1, 15).filter(potted).length} / 15</span><span class="rem">${range(1, 15).filter(potted).length}/15</span></div><div class="chips">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div></div>`;
+  const pl = i => {
+    const cur = game.cur === i && !game.over, g = r === 8 ? game.groups[i] : null;
+    let chips = '', rem = '';
+    if (g) {
+      const nums = groupNums(g), left = nums.filter(n => !potted(n)).length;
+      chips = nums.map(n => chip(n, potted(n))).join('') + '<span class="sep"></span>' + chip(8, potted(8), !left && !potted(8));
+      rem = left ? `剩${left}` : '打8號';
+    }
+    const st = cur ? (cpuTurn() ? '思考中' : net && notMine() ? '瞄準中' : nameOf(i) === '你' ? '你的回合' : '擊球中') : '';
+    return `<div class="pl${cur ? ' cur' : ''}"><div class="plh"><span class="nm">${nameOf(i)}</span><span class="grp">${r === 8 ? g || '未分組' : ''}</span><span class="rem">${rem}</span>${st ? `<span class="stt">● ${st}</span>` : ''}</div>${chips ? `<div class="chips">${chips}</div>` : ''}</div>`;
+  };
+  const sc = `<div class="sc"><b>${match.score[0]}<i>:</i>${match.score[1]}</b><small>${match.race > 1 ? `搶${match.race} · ` : ''}第${match.rack + 1}局</small></div>`;
+  const row9 = r === 9 ? `<div class="row9">${range(1, 9).map(n => chip(n, potted(n), n === lowest())).join('')}</div>` : '';
+  return pl(0) + sc + pl(1) + row9;
+}
+function tipName() {
+  const v = tip.y > 0.25 ? '高桿' : tip.y < -0.25 ? '低桿' : '', h = tip.x > 0.25 ? '右塞' : tip.x < -0.25 ? '左塞' : '';
+  return [v, h].filter(Boolean).join(' · ') || '中心';
+}
+function hintText() {
+  if (menuOpen || state === 'over') return '';
   if (state === 'replay') return '重播中（半速）';
-  if (state === 'over') return net ? (net.open ? `R ${matchDone() ? '再來一場' : '下一局'}　·　P 重播` : '') : 'R 再來一局　·　P 重播　·　M 換模式';
   if (state !== 'aim') return '';
   if (cpuTurn()) return '電腦思考中…';
-  if (net && !net.open) return 'Esc 打開房間面板（邀請連結、離開對戰）';
+  if (net && !net.open) return '連線中斷 · 打開選單查看房間';
   if (notMine()) return '對手瞄準中…';
-  return [game.breakShot ? '開球：WASD 在開球線後擺母球' : game.ballInHand && '自由球：WASD 移動母球', '按住左鍵蓄力，放開出桿', '方向鍵 打點', 'Q/E 仰角', 'Tab 按鍵說明'].filter(Boolean).join('　·　');
+  if (!isTouch && !locked()) return '點擊球台開始瞄準';
+  if (game.breakShot) return isTouch ? '開球 · 可點「移動母球」在開球線後擺位' : '開球 · WASD 在開球線後擺母球';
+  if (game.ballInHand) return isTouch ? '自由球 · 點「移動母球」後拖曳擺位' : '自由球 · WASD 移動母球';
+  return isTouch ? '' : '按住左鍵蓄力，放開出桿';
+}
+function updateHud() {
+  const b = boardHtml(); if (b !== boardCache) $('board').innerHTML = boardCache = b;
+  $t('modeLabel', modeLabel());
+  for (const id of ['tipDot', 'padDot']) { const s = $(id).style; s.left = 50 + tip.x * 25 + '%'; s.top = 50 - tip.y * 25 + '%'; }
+  const tn = tipName(), ed = Math.round(elev * 180 / Math.PI) + '°';
+  $t('tipName', tn); $t('padName', tn); $t('elevVal', ed); $t('padElevV', ed);
+  const pct = Math.round(power * 100) + '%';
+  $('powFill').style.width = pct; $t('powVal', pct); $('power').classList.toggle('max', power >= 1);
+  $('powLast').style.opacity = lastPower ? 0.7 : 0; $('powLast').style.left = lastPower * 100 + '%';
+  $t('lastLab', lastPower ? `上一桿 ${Math.round(lastPower * 100)}%` : '');
+  $('tpowFill').style.height = pct; $('tpowKnob').style.top = pct; $t('tpowVal', pct); $('tpow').classList.toggle('max', power >= 1);
+  $t('hint', hintText());
+  const mine = state === 'aim' && !notMine(), cp = mine && (game.ballInHand || game.breakShot);
+  if (!cp) moveMode = false;
+  const bc = document.body.classList; bc.toggle('mine', mine); bc.toggle('bih', cp);
+  $('moveBtn').classList.toggle('on', moveMode); $('fineBtn').classList.toggle('on', fine); $('viewBtn').classList.toggle('on', topView);
+  const showRes = state === 'over' && !!result && !menuOpen;
+  $('result').classList.toggle('on', showRes); bc.toggle('res', showRes);
+  if (Math.hypot(tip.x, tip.y) > 0.3 || elev > 0.15) coachEvent('tip');
+  if (screen === 'pause') renderPause();
+}
+function tableHtml() {
+  const r = rules();
+  if (r === 'practice') return `<div class="trow"><span>已進袋</span><span class="mono">${range(1, 15).filter(potted).length} / 15</span></div><div class="chips lg">${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`;
+  if (r === 9) return `<div class="trow"><span>下一顆：${lowest()} 號</span><span class="mono">剩 ${range(1, 9).filter(n => !potted(n)).length}</span></div><div class="chips lg">${range(1, 9).map(n => chip(n, potted(n), n === lowest())).join('')}</div>`;
+  return [0, 1].map(i => {
+    const g = game.groups[i];
+    if (!g) return `<div class="trow"><span>${nameOf(i)} · 未分組</span></div>`;
+    const nums = groupNums(g);
+    return `<div class="trow"><span>${nameOf(i)} · ${g}</span><span class="mono">剩 ${nums.filter(n => !potted(n)).length}</span></div><div class="chips lg">${nums.map(n => chip(n, potted(n))).join('')}</div>`;
+  }).join('<hr>');
+}
+function renderPause() {
+  if (screen !== 'pause') return;
+  const r = rules();
+  $t('pEyebrow', net ? '選單 · 連線對戰不會暫停' : '已暫停');
+  $t('pTitle', r === 'practice' ? '練習' : `第 ${match.rack + 1} 局 · ${match.score[0]} : ${match.score[1]}`);
+  $t('pSub', `${modeLabel()} · ${game.over ? '本局已結束' : '輪到 ' + nameOf(game.cur)}`);
+  $('pRestart').hidden = !!net; $('pRoom').hidden = !net; $t('pQuit', net ? '離開對戰' : '離開到主選單');
+  const t = tableHtml(); if (t !== tableCache) $('pTable').innerHTML = tableCache = t;
+}
+function showResult(reason, w) {
+  result = { reason, w };
+  const done = matchDone(), me = net ? net.me : 0, nm = nameOf(w), sp = /\d$/.test(nm) ? ' ' : '';
+  $t('resEyebrow', `第 ${match.hist.length} 局 · ${reason}`);
+  $t('resTitle', done ? `${nm}${sp}贏得比賽` : `${nm}${sp}拿下這局`);
+  for (const i of [0, 1]) { $t('resN' + i, nameOf(i)); $t('resG' + i, rules() === 8 ? game.groups[i] || '' : ''); }
+  $('resScore').innerHTML = `${match.score[0]}<i>:</i>${match.score[1]}`;
+  $('resRacks').innerHTML = match.race > 1 ? match.hist.map((x, i) => `<div><i class="${x === me ? 'w' : ''}"></i><small>${i + 1}</small></div>`).join('') : '';
+  const st = match.st, row = (l, k) => `<div class="srow"><span>${l}</span><span>${st[0][k]}</span><span>${st[1][k]}</span></div>`;
+  $('resStats').innerHTML = `<div class="srow h"><span>${done ? '整場' : '目前'}</span><span>${nameOf(0)}</span><span>${nameOf(1)}</span></div>${row('進球', 'pots')}${row('最長連桿', 'best')}${row('犯規', 'fouls')}`;
+  $('resNext').firstChild.textContent = done ? '再來一場' : '下一局';
+  $('resNext').hidden = !!net && !net.open;
+  $t('resHome', net ? '離開對戰' : '回主選單');
+  $t('resNote', net && !net.open ? '對手已離線，無法開下一局' : '');
+  if (locked()) document.exitPointerLock();
+}
+function homeOrbit() {
+  if (screen !== 'home' && screen !== 'online') return;
+  const a = performance.now() / 14000;
+  camera.position.set(Math.cos(a) * 2.4, 1.25, Math.sin(a) * 1.7); camera.lookAt(0, 0, 0); camera.userData.t = null;
+  for (const m of lamps) m.visible = true;
 }
 
 // ---- 連線對戰（PeerJS 點對點）----
@@ -849,8 +1497,8 @@ function hintText() { // 只顯示當下用得到的操作
 // 每秒互送心跳，8 秒沒收到任何東西就當作斷線（關分頁時 WebRTC 自己的 close 事件可能要等很久）。
 // ponytail: 信任雙方瀏覽器（朋友對戰用），不防作弊；連不上的網路環境要加 TURN 伺服器
 let net = null, shotBy = 0, aimSent = 0;
-const match = { race: 3, score: [0, 0], rack: 0 }; // 搶 race 局；rack 決定誰開球（輪流）
-const netQ = [], PEER_PREFIX = 'pool3d-room-', $ = id => document.getElementById(id);
+const match = { race: 3, score: [0, 0], rack: 0, hist: [], st: [newSt(), newSt()] }; // 搶 race 局；rack 決定誰開球（輪流）
+const netQ = [], PEER_PREFIX = 'pool3d-room-';
 const notMine = () => cpuTurn() || !!(net && (!net.open || game.cur !== net.me) && !game.over);
 const send = m => net?.open && net.conn.send(m);
 const matchDone = () => Math.max(...match.score) >= match.race;
@@ -868,6 +1516,26 @@ function sendSync(reset) {
   send({ t: 'sync', reset, mode, match, b: balls.map(b => [b.x, b.z, b.active ? 1 : 0]),
     g: { cur: game.cur, groups: game.groups, ballInHand: game.ballInHand, breakShot: game.breakShot, over: game.over } });
 }
+// 對手送來的資料一律先檢查格式、重組成乾淨的物件再用（有些欄位會進 innerHTML，不檢查就能被注入程式碼）
+const int = v => (Number.isInteger(v) && v >= 0 && v < 1000 ? v : 0), num = (v, a, b) => (Number.isFinite(v) ? clamp(v, a, b) : 0);
+const GROUPS = ['全色', '花色'], cleanGroup = g => (GROUPS.includes(g) ? g : null);
+function cleanSync(m) {
+  if (![1, 3].includes(m.mode) || !Array.isArray(m.b) || m.b.length !== balls.length || !m.g || !m.match) return null;
+  const b = m.b.map(a => (Array.isArray(a) ? [num(a[0], -L, L), num(a[1], -W, W), a[2] ? 1 : 0] : [0, 0, 0]));
+  const mt = m.match, st = Array.isArray(mt.st) ? mt.st : [];
+  return { t: 'sync', reset: !!m.reset, mode: m.mode, b,
+    match: { race: [1, 3, 5].includes(mt.race) ? mt.race : 3, score: [0, 1].map(i => int(mt.score?.[i])), rack: int(mt.rack),
+      hist: Array.isArray(mt.hist) ? mt.hist.slice(0, 20).map(x => (x ? 1 : 0)) : [],
+      st: [0, 1].map(i => ({ pots: int(st[i]?.pots), fouls: int(st[i]?.fouls), run: int(st[i]?.run), best: int(st[i]?.best) })) },
+    g: { cur: m.g.cur ? 1 : 0, groups: [0, 1].map(i => cleanGroup(m.g.groups?.[i])), ballInHand: !!m.g.ballInHand, breakShot: !!m.g.breakShot, over: !!m.g.over } };
+}
+function cleanMsg(m) {
+  if (!m || typeof m !== 'object') return null;
+  if (m.t === 'aim') return { t: 'aim', y: num(m.y, -1e3, 1e3), x: num(m.x, -L, L), z: num(m.z, -W, W) };
+  if (m.t === 'shot') return { t: 'shot', y: num(m.y, -1e3, 1e3), p: num(m.p, 0, 1), tip: { x: num(m.tip?.x, -1, 1), y: num(m.tip?.y, -1, 1) }, el: num(m.el, 0.05, 1.1), x: num(m.x, -L, L), z: num(m.z, -W, W) };
+  if (m.t === 'sync') return cleanSync(m);
+  return null;
+}
 function applySync(m) {
   mode = m.mode; Object.assign(match, m.match);
   if (m.reset) newGame();
@@ -878,7 +1546,7 @@ function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同�
   while (netQ.length) {
     const m = netQ[0], idle = state === 'aim' || state === 'over';
     if (m.t === 'aim') { if (state === 'aim' && notMine()) { yaw = m.y; if (game.ballInHand || game.breakShot) { cueBall.x = m.x; cueBall.z = m.z; } } }
-    else if (m.t === 'shot') { if (state !== 'aim') break; cueBall.x = m.x; cueBall.z = m.z; yaw = m.y; shoot(m.p, m.tip, m.el); }
+    else if (m.t === 'shot') { if (state !== 'aim') break; if (notMine()) { cueBall.x = m.x; cueBall.z = m.z; yaw = m.y; shoot(m.p, m.tip, m.el); } } // 不是對手的回合就丟掉
     else if (m.t === 'sync') { if (!idle && !m.reset) break; applySync(m); }
     netQ.shift();
   }
@@ -889,7 +1557,7 @@ function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同�
 function connLost(bye) {
   const c = net.conn; net.conn = null; net.open = false; net.lost = true; netQ.length = 0; c?.close();
   flash(bye ? '對手離開了對戰' : '與對手的連線中斷了', 1e9);
-  document.exitPointerLock?.(); // 跳回選單，讓狀態一目了然
+  onTab = net.me === 1 ? 'join' : 'host'; showScreen('online'); // 直接跳到房間畫面（手機沒有滑鼠鎖定可解除，不能靠 pointerlockchange）
 }
 setInterval(() => { // 心跳
   if (!net?.open) return;
@@ -906,12 +1574,12 @@ function setupConn(c) {
   c.on('data', m => {
     if (!net || net.conn !== c) return;
     net.rx = performance.now();
-    if (m.t === 'bye') connLost(true); else if (m.t !== 'ping') netQ.push(m);
+    if (m?.t === 'bye') connLost(true); else if (m?.t !== 'ping') { const c2 = cleanMsg(m); if (c2) netQ.push(c2); }
   });
   c.on('close', () => { if (net?.conn === c) connLost(false); });
 }
 async function hostRoom(r, race) {
-  leaveNet(); mode = r === 9 ? 3 : 1; Object.assign(match, { race, score: [0, 0], rack: 0 });
+  leaveNet(); mode = r === 9 ? 3 : 1; resetMatch(race);
   const code = Math.random().toString(36).slice(2, 6).toUpperCase();
   net = { me: 0, open: false, code, ready: false }; newGame();
   try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
@@ -931,42 +1599,58 @@ async function joinRoom(code) {
   peer.on('error', e => fail(e.type === 'peer-unavailable' ? `找不到房間 ${code}，請確認房號，或房主已離開` : '連線錯誤：' + e.type));
   setTimeout(() => fail('連線逾時：可能是網路擋住了點對點連線，換個網路再試'), 15000);
 }
-// 選單：開房選項（分段按鈕）
-for (const id of ['segGame', 'segRace']) $(id).addEventListener('click', e => {
-  if (!e.target.dataset.v) return;
-  $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', b === e.target));
+// ---- 線上房間畫面 ----
+let onTab = 'host', netUiKey = '';
+$('onTabs').addEventListener('click', e => {
+  const t = e.target.closest('[data-t]')?.dataset.t; if (!t || t === onTab) return;
+  if (net) { leaveNet(); started = false; }
+  onTab = t; $('netMsg').textContent = ''; netUiKey = '';
 });
-const segVal = id => +$(id).querySelector('.on').dataset.v;
-$('create').addEventListener('click', () => { $('netMsg').textContent = ''; hostRoom(segVal('segGame'), segVal('segRace')); });
-$('join').addEventListener('click', () => { $('netMsg').textContent = ''; joinRoom($('room').value); });
+$('create').addEventListener('click', () => { $('netMsg').textContent = ''; started = false; hostRoom(cfg.game, cfg.race); });
+$('join').addEventListener('click', () => { $('netMsg').textContent = ''; started = false; joinRoom($('room').value); });
 $('room').addEventListener('keydown', e => { if (e.key === 'Enter') $('join').click(); });
+$('room').addEventListener('input', () => { $('room').value = $('room').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 $('rCopy').addEventListener('click', () => {
+  if (isTouch && navigator.share) return navigator.share({ title: '3D 美式撞球', text: `來打一局！房號 ${net?.code}`, url: inviteLink() }).catch(() => {});
   $('rLink').select();
   navigator.clipboard?.writeText(inviteLink()).then(() => { $('rCopy').textContent = '已複製 ✓'; setTimeout(() => ($('rCopy').textContent = '複製邀請連結'), 2000); }, () => {});
 });
-$('rPlay').addEventListener('click', play);
-$('rLeave').addEventListener('click', () => { leaveNet(); mode = 1; newGame(); openMenu(true); });
+$('rPlay').addEventListener('click', () => { if (net?.open || (net && started)) play(); });
+$('rLeave').addEventListener('click', leaveToHome);
+$('onBack').addEventListener('click', leaveToHome);
 $('rRetry').addEventListener('click', () => joinRoom(net.code));
-// 房間面板與畫面右上角狀態徽章：每一幀依狀態更新（只在內容變了才寫 DOM）
-let netUiKey = '';
 function updateNetUi() {
   const st = !net ? '' : net.open ? 'ok' : net.lost ? 'lost' : net.me === 0 ? (net.ready ? 'wait' : 'make') : 'conn';
-  const key = [st, net?.code, scoreText(), match.race, mode, started, menuOpen].join('|');
+  const key = [st, net?.code, match.score.join(), menuOpen, screen, onTab, started, $('netMsg').textContent, cfg.game, cfg.race].join('|');
   if (key === netUiKey) return; netUiKey = key;
-  menuEl.classList.toggle('online', !!net); resumeBtn.hidden = !started || !!net;
-  const badge = $('netBadge'); badge.className = st; badge.hidden = !net; $('roomPanel').className = st;
-  if (!net) return;
-  const label = { make: '建立房間中…', wait: '等待對手加入…', conn: `正在連線房間 ${net.code}…`, ok: net.me === 0 ? '對手已加入，可以開始了' : '已加入房間，可以開始了',
-    lost: net.me === 0 ? '對手已離線・可傳邀請連結讓他重新加入' : '與房主的連線中斷' }[st];
-  $('rStat').textContent = label;
-  $('rInfo').textContent = `房號 ${net.code}　·　${rules()} 號球　·　搶 ${match.race} 局　·　你是${net.me === 0 ? '房主（先開球）' : '挑戰者'}`;
-  $('rScore').textContent = st === 'ok' || net.lost ? scoreText() : '';
-  $('rLink').value = inviteLink(); $('rLinkRow').hidden = net.me !== 0;
-  $('rPlay').textContent = started ? '回到球桌' : '進入球桌';
-  $('rRetry').hidden = !(net.me === 1 && net.lost);
-  badge.innerHTML = `<i></i>${label}<span>房號 ${net.code}${st === 'ok' || net.lost ? '　' + scoreText() + `（搶 ${match.race}）` : ''}</span>`;
+  const badge = $('netBadge'); badge.hidden = !net; badge.className = 'hbtn badge ' + st;
+  if (net) badge.innerHTML = `<i></i><span class="d-only">${{ make: '建立中', wait: '等待對手', conn: '連線中', ok: '已連線', lost: '連線中斷' }[st]}</span><small>${net.code}</small>`;
+  if (screen !== 'online') return;
+  const host = onTab === 'host';
+  document.querySelectorAll('#onTabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === onTab));
+  $('hostPane').hidden = !host; $('joinPane').hidden = host;
+  $('hostIdle').hidden = !!net; $('hostRoom').hidden = !net;
+  $('createRule').textContent = `${cfg.game} 號球 · ${cfg.race > 1 ? `搶 ${cfg.race} 局` : '單局'}`;
+  if (net && host) { $('codeTiles').innerHTML = [...net.code].map(c => `<b>${c}</b>`).join(''); $('rLink').value = inviteLink(); }
+  $('room').disabled = $('join').disabled = !!net && !net.lost;
+  if (net && !host) $('room').value = net.code;
+  $('joinState').textContent = !net || host ? '' : { conn: `正在連線房間 ${net.code}…`, ok: `已加入房間 ${net.code}`, lost: '與房主的連線中斷' }[st] || '';
+  const steps = host ? ['建立房間', '邀請朋友', '等待對手加入', '開球'] : ['輸入房號', '連線房主', '開球'];
+  const cur = host ? (!net || st === 'make' ? 0 : st === 'ok' ? 3 : 2) : (!net ? 0 : st === 'ok' ? 2 : 1);
+  $('steps').innerHTML = steps.map((s, i) => `<div class="${i < cur ? 'done' : i === cur ? 'cur' : ''}${i === cur && st === 'lost' ? ' bad' : ''}"><i></i><span>${i + 1} · ${s}</span></div>`).join('');
+  $('onR').hidden = !net && !host;
+  const meRow = `<div class="plr"><span class="av">你</span><span class="who"><b>你</b><small>${host ? '房主 · 先開第 1 局' : '挑戰者'}</small></span><em>${net ? '已就緒' : ''}</em></div>`;
+  const oppRow = st === 'ok' ? `<div class="plr"><span class="av">對</span><span class="who"><b>對手</b><small>${host ? '挑戰者' : '房主 · 先開第 1 局'}</small></span><em>已加入</em></div>`
+    : st === 'lost' ? `<div class="plr empty bad"><span class="av"></span><span class="who"><b>${host ? '對手已離線' : '房主已離線'}</b><small>${host ? '把邀請連結再傳一次' : '可以嘗試重新連線'}</small></span><em class="dot bad"></em></div>`
+    : `<div class="plr empty"><span class="av"></span><span class="who"><b>${host ? '等待對手加入…' : '連線房主中…'}</b><small>${host ? (net ? '對方打開邀請連結就會自動加入' : '建立房間後即可邀請') : ''}</small></span><em class="dot"></em></div>`;
+  $('players').innerHTML = host ? meRow + oppRow : oppRow + meRow;
+  $('ruleTxt').textContent = net ? `${rules()} 號球 · ${match.race > 1 ? `搶 ${match.race} 局` : '單局'}` : $('createRule').textContent;
+  $('rPlay').disabled = !(st === 'ok' || (net && started));
+  $('rPlay').textContent = started && net ? '回到球桌' : '開始對戰';
+  $('startNote').textContent = !net || st === 'ok' || started ? '' : host ? '對手加入後即可開始' : '連上房主後即可開始';
+  $('rRetry').hidden = !(net?.me === 1 && net.lost);
+  $('rLeave').textContent = net ? '離開房間' : '返回';
 }
-{ const q = new URLSearchParams(location.search).get('room'); if (q) joinRoom(q); } // 打開邀請連結就直接連線
 
 // ---- 主迴圈 ----
 const clock = new THREE.Clock(), camTarget = new THREE.Vector3(), camPos = new THREE.Vector3(), camDir = new THREE.Vector3(1, 0, 0), follow = new THREE.Vector3(), q = new THREE.Quaternion(), axis = new THREE.Vector3();
@@ -976,7 +1660,7 @@ function frame(_, fixedDt) {
   const dt = fixedDt ?? Math.min(clock.getDelta(), 0.05);
   sfxBudget = 0;
   updateNetUi();
-  if (menuOpen && !fixedDt && !net) { updateRoll(false); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
+  if (menuOpen && !fixedDt && !net) { homeOrbit(); updateRoll(false); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
   if (state === 'moving') {
     acc += dt; simT += dt;
     while (acc >= STEP) { step(STEP); acc -= STEP; }
@@ -1001,9 +1685,7 @@ function frame(_, fixedDt) {
   tip.x += ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * dt * 1.5;
   tip.y += ((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0)) * dt * 1.5;
   elev = Math.min(1.1, Math.max(0.05, elev + ((keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0)) * dt * 0.6));
-  elevEl.textContent = `仰角 ${Math.round(elev * 180 / Math.PI)}°`;
   const tl = Math.hypot(tip.x, tip.y); if (tl > 1) { tip.x /= tl; tip.y /= tl; }
-  tipDot.style.left = 50 + tip.x * 25 + '%'; tipDot.style.top = 50 - tip.y * 25 + '%';
   const dx = Math.cos(yaw), dz = Math.sin(yaw);
 
   // 自由球擺位
@@ -1013,7 +1695,7 @@ function frame(_, fixedDt) {
     const nz = Math.max(-W + R, Math.min(W - R, cueBall.z + (dz * f + dx * r) * 0.5 * dt));
     if (!overlaps(nx, nz, cueBall)) { cueBall.x = nx; cueBall.z = nz; }
   }
-  if (charging) power = Math.min(1, power + dt * 0.7);
+  if (charging && !touchPow) power = Math.min(1, power + dt * 0.7);
 
   if (state === 'replay') {
     replay.t += dt * 0.5; // 半速
@@ -1079,14 +1761,15 @@ function frame(_, fixedDt) {
   fovKick *= Math.exp(-dt * 5); // 出桿瞬間鏡頭往前衝一下再回來
   camera.fov = FOV - fovKick; camera.updateProjectionMatrix();
 
-  if ((msgTimer -= dt) <= 0) msgEl.style.opacity = 0;
+  tickMsg(dt);
   updateRoll(state === 'moving'); updateMarker(performance.now() / 1000);
-  if ((toastTimer -= dt) <= 0) toastEl.classList.remove('on');
+  
   updateHud();
   if (!fixedDt) renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(frame);
-newGame(); msgEl.style.opacity = 0;
+resetMatch(cfg.race); mode = modeFromCfg(); newGame(); hideMsg(); refreshToggles();
+{ const q = new URLSearchParams(location.search).get('room'); if (q) { onTab = 'join'; cfg.opp = 'online'; joinRoom(q); showScreen('online'); } else showScreen('home'); }
 window.pool = { get net() { return net; }, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
 </script>
 </body>
