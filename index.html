@@ -43,16 +43,39 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:syste
 #menu button{font:600 14px system-ui,"PingFang TC",sans-serif;color:#fff;background:#1f5a3a;border:1px solid #6fd39a55;border-radius:9px;padding:11px 8px;cursor:pointer}
 #menu button:hover{background:#2a7a4f}
 #menu button.cur{box-shadow:0 0 0 2px #ffe066}
-#online{display:grid;grid-template-columns:1fr 1fr 90px auto;gap:8px}
-#room{font:600 15px system-ui,sans-serif;text-transform:uppercase;text-align:center;color:#fff;background:#0006;border:1px solid #6fd39a55;border-radius:9px;min-width:0}
-#netMsg{word-break:break-all;user-select:text}
+.netbox{background:#0003;border:1px solid #ffffff14;border-radius:12px;padding:12px;display:grid;gap:10px}
+.nrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.nrow>b{font-size:13px;opacity:.7;min-width:64px}
+.seg{display:flex;border-radius:9px;overflow:hidden;border:1px solid #6fd39a55}
+#menu .seg button{border:0;border-radius:0;background:#0004;padding:9px 12px;opacity:.65}
+#menu .seg button.on{background:#1f5a3a;opacity:1}
+#create{margin-left:auto}
+#room,#rLink{font:600 15px system-ui,sans-serif;color:#fff;background:#0006;border:1px solid #6fd39a55;border-radius:9px;padding:10px;min-width:0}
+#room{flex:1;text-transform:uppercase;letter-spacing:.2em;text-align:center}
+#netMsg{font-size:13px;color:#ff9b8a}#netMsg:empty{display:none}
+#menu.online .local,#menu:not(.online) #roomPanel{display:none}
+#roomPanel{display:grid;gap:12px;margin-top:14px}
+.rstat{display:flex;align-items:center;gap:10px;font-size:18px}
+.rstat i,#netBadge i{width:10px;height:10px;border-radius:50%;background:#e6b655;flex:none;animation:pulse 1.2s infinite}
+#roomPanel.ok .rstat i{background:#4cd27a;animation:none}#roomPanel.lost .rstat i{background:#e65555;animation:none}#roomPanel.lost .rstat b{color:#ff9b8a}
+#rInfo{font-size:13px;opacity:.7}#rScore{font-size:22px;font-weight:700}#rScore:empty{display:none}
+.rhelp{font-size:13px;opacity:.7;margin-bottom:6px}
+.rlink{display:flex;gap:8px}.rlink input{flex:1;font-size:13px!important}
+.ract{display:flex;gap:8px}.ract button{flex:1}
+#rPlay{background:#7a5a1c!important;border-color:#e6b65555!important}
+#rLeave{background:#5a1f1f!important;border-color:#e6555555!important}
+@keyframes pulse{50%{opacity:.35}}
+#netBadge{position:fixed;top:14px;right:16px;z-index:4;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:#000a;border:1px solid #ffffff22;border-radius:20px;padding:7px 14px;pointer-events:none;text-shadow:none}
+#netBadge[hidden]{display:none}
+#netBadge span{opacity:.7;font-weight:500}
+#netBadge.ok i{background:#4cd27a;animation:none}#netBadge.lost{border-color:#e65555;background:#3a0d0dcc}#netBadge.lost i{background:#e65555;animation:none}
 #resume{width:100%;margin-top:10px;background:#7a5a1c!important;border-color:#e6b65555!important}
 #menu label{display:flex;align-items:center;gap:12px;font-size:14px;margin:6px 0}
 #menu label span{min-width:90px}
 #menu input[type=range]{flex:1;accent-color:#6fd39a}
 #menu .keys{grid-template-columns:auto 1fr auto 1fr}
 #helpPanel{z-index:5}
-@media (max-width:520px){#modes,#online{grid-template-columns:repeat(2,1fr)}#menu .keys{grid-template-columns:auto 1fr}}
+@media (max-width:520px){#modes{grid-template-columns:repeat(2,1fr)}#menu .keys{grid-template-columns:auto 1fr}}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
@@ -65,17 +88,32 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:syste
 <div id="hint"></div>
 <div id="helpPanel" class="panel"><div class="keys"></div></div>
 <div id="menu" class="on"><div class="panel">
-  <h1>3D 美式撞球</h1><div class="sub">選一個模式開始。遊戲中按 Esc 回到這裡。</div>
-  <div id="modes"></div>
-  <h2>連線對戰</h2>
-  <div id="online"><button data-r="8">開房・8 號球</button><button data-r="9">開房・9 號球</button><input id="room" placeholder="房號" maxlength="4" autocomplete="off"><button id="join">加入</button></div>
-  <div id="netMsg" class="sub"></div>
+  <h1>3D 美式撞球</h1>
+  <div class="local">
+    <div class="sub">選一個模式開始。遊戲中按 Esc 回到這裡。</div>
+    <div id="modes"></div>
+    <h2>連線對戰</h2>
+    <div class="netbox">
+      <div class="nrow"><b>開房間</b><div class="seg" id="segGame"><button data-v="8" class="on">8 號球</button><button data-v="9">9 號球</button></div>
+        <div class="seg" id="segRace"><button data-v="1">搶 1 局</button><button data-v="3" class="on">搶 3 局</button><button data-v="5">搶 5 局</button></div><button id="create">建立房間</button></div>
+      <div class="nrow"><b>加入房間</b><input id="room" placeholder="輸入 4 碼房號" maxlength="4" autocomplete="off"><button id="join">加入</button></div>
+      <div id="netMsg"></div>
+    </div>
+  </div>
+  <div id="roomPanel">
+    <div class="rstat"><i></i><b id="rStat"></b></div>
+    <div id="rInfo"></div>
+    <div id="rScore"></div>
+    <div id="rLinkRow"><div class="rhelp">把這個連結傳給朋友，對方打開就會自動加入：</div><div class="rlink"><input id="rLink" readonly><button id="rCopy">複製邀請連結</button></div></div>
+    <div class="ract"><button id="rPlay">進入球桌</button><button id="rRetry" hidden>重新連線</button><button id="rLeave">離開對戰</button></div>
+  </div>
   <button id="resume" hidden>繼續目前這局</button>
   <h2>設定</h2>
   <label><span>音量</span><input type="range" id="vol" min="0" max="1" step="0.05"></label>
   <label><span>滑鼠靈敏度</span><input type="range" id="sens" min="0.3" max="2" step="0.05"></label>
   <h2>操作</h2><div class="keys"></div>
 </div></div>
+<div id="netBadge" hidden></div>
 <div id="power"><div></div><i></i></div>
 <div id="tip"><b></b><i></i></div>
 <script type="module">
@@ -486,7 +524,7 @@ let state = 'aim', ai = null;
 function newGame() {
   balls.forEach(hide);
   const r = rules();
-  Object.assign(game, { cur: 0, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
+  Object.assign(game, { cur: net ? match.rack % 2 : 0, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
   if (r === 9) rack9();
   else if (r === 'challenge') {
     const c = CHALLENGES[game.ch];
@@ -495,14 +533,21 @@ function newGame() {
     game.shotsLeft = c.shots;
   } else rack8();
   state = 'aim'; ai = null; rec = [];
-  flash(r === 'challenge' ? `挑戰 ${game.ch + 1}：${CHALLENGES[game.ch].name}` : r === 'practice' ? '練習模式：隨時自由擺球' : `${MODES[mode]}　${nameOf(0)} 開球`);
+  flash(r === 'challenge' ? `挑戰 ${game.ch + 1}：${CHALLENGES[game.ch].name}` : r === 'practice' ? '練習模式：隨時自由擺球' : (net ? `第 ${match.rack + 1} 局（搶 ${match.race}）　${nameOf(game.cur)} 開球` : `${MODES[mode]}　玩家 1 開球`));
 }
 function respawnCue() {
   let x = -L / 2;
   while (overlaps(x, 0, cueBall)) x -= 2.1 * R;
   place(cueBall, x, 0);
 }
-function gameOver(text) { game.over = true; state = 'over'; flash(text + '　按 R 再來一局', 1e9); }
+function gameOver(text, winner) {
+  game.over = true; state = 'over';
+  if (net && winner != null) {
+    match.score[winner]++;
+    text = `${text}　${scoreText()}${matchDone() ? `　🏆 ${nameOf(winner)} 贏得比賽` : ''}　按 R ${matchDone() ? '再來一場' : '下一局'}`;
+  } else text += '　按 R 再來一局';
+  flash(text, 1e9);
+}
 
 function endShot() {
   for (const b of balls) b.wy = 0; // 停下後殘留的原地側旋歸零
@@ -520,7 +565,7 @@ function end8() {
   const foul = shot.scratch || !legalFirst;
   if (pots.includes(8)) {
     const win = shot.onEight && !foul;
-    return gameOver(`${nameOf(win ? p : 1 - p)} 獲勝！${win ? '' : '（8 號球提前或犯規落袋）'}`);
+    return gameOver(`${nameOf(win ? p : 1 - p)} 獲勝！${win ? '' : '（8 號球提前或犯規落袋）'}`, win ? p : 1 - p);
   }
   if (!g && pots[0] && !foul) { game.groups[p] = groupOf(pots[0]); game.groups[1 - p] = groupOf(pots[0]) === '全色' ? '花色' : '全色'; }
   const mine = game.groups[p];
@@ -531,7 +576,7 @@ function end9() {
   const p = game.cur;
   const foul = shot.scratch || shot.firstHit !== shot.lowest;
   if (shot.potted.includes(9)) {
-    if (!foul) return gameOver(`${nameOf(p)} 打進 9 號球獲勝！`);
+    if (!foul) return gameOver(`${nameOf(p)} 打進 9 號球獲勝！`, p);
     let x = L / 2; while (overlaps(x, 0, balls[9])) x += 2.1 * R;
     place(balls[9], x, 0); // 犯規打進 9 號：放回置球點
   }
@@ -634,7 +679,7 @@ const menuEl = document.getElementById('menu'), resumeBtn = document.getElementB
 let menuOpen = true, started = false;
 function openMenu(v) {
   menuOpen = v; menuEl.classList.toggle('on', v); charging = false;
-  resumeBtn.hidden = !started;
+  resumeBtn.hidden = !started || !!net; netUiKey = '';
   document.querySelectorAll('#modes button').forEach((b, i) => b.classList.toggle('cur', started && i === mode));
 }
 function play() { ac.resume(); started = true; openMenu(false); lockPointer(); }
@@ -668,7 +713,12 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape' && !locked() && started) menuOpen ? play() : openMenu(true);
   if (menuOpen) return;
   if (e.code === 'KeyV') topView = !topView;
-  if (e.code === 'KeyR') { if (net && !net.open) return; newGame(); sendSync(true); }
+  if (e.code === 'KeyR') {
+    if (!net) return newGame();
+    if (!net.open || !game.over) return; // 連線中只有一局結束後才能開下一局
+    if (matchDone()) Object.assign(match, { score: [0, 0], rack: 0 }); else match.rack++;
+    newGame(); sendSync(true);
+  }
   if (e.code === 'KeyC') { tip.x = tip.y = 0; elev = 0.05; }
   if (e.code === 'KeyH') helpers = !helpers;
   if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); toast(settings.mark ? '目標提示：開' : '目標提示：關'); }
@@ -787,7 +837,7 @@ const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 const playerRow = (i, extra) => `<div class="row${game.cur === i && !game.over ? ' cur' : ''}"><span class="name">${nameOf(i)}</span>${extra}</div>`;
 let hudHtml = '';
 function updateHud() {
-  const r = rules(), out = [`<div class="mode">${net ? `連線對戰・${rules()} 號球` : MODES[mode]}</div>`];
+  const r = rules(), out = [`<div class="mode">${net ? `連線對戰・${rules()} 號球・第 ${match.rack + 1} 局` : MODES[mode]}</div>`];
   if (r === 8) out.push(...[0, 1].map(i => {
     const g = game.groups[i];
     if (!g) return playerRow(i, '<span class="grp">未分組</span>');
@@ -813,32 +863,41 @@ function updateHud() {
 function hintText() { // 只顯示當下用得到的操作
   if (menuOpen) return '';
   if (state === 'replay') return '重播中（半速）';
-  if (state === 'over') return 'R 再來一局　·　P 重播　·　M 換模式';
+  if (state === 'over') return net ? (net.open ? `R ${matchDone() ? '再來一場' : '下一局'}　·　P 重播` : '') : 'R 再來一局　·　P 重播　·　M 換模式';
   if (state !== 'aim') return '';
   if (cpuTurn()) return '電腦思考中…';
-  if (net && !net.open) return net.me === 0 ? `房號 ${net.code}・等待對手加入…（Esc 看邀請連結）` : '連線中…';
+  if (net && !net.open) return 'Esc 打開房間面板（邀請連結、離開對戰）';
   if (notMine()) return '對手瞄準中…';
   return [game.breakShot ? '開球：WASD 在開球線後擺母球' : game.ballInHand && '自由球：WASD 移動母球', '按住左鍵蓄力，放開出桿', '方向鍵 打點', 'Q/E 仰角', 'Tab 按鍵說明'].filter(Boolean).join('　·　');
 }
 
 // ---- 連線對戰（PeerJS 點對點）----
 // 只傳出桿參數，兩邊各自跑同一套物理；每桿結束由出桿方送出所有球的最終位置與比賽狀態蓋過去，保證兩邊一致。
+// 每秒互送心跳，8 秒沒收到任何東西就當作斷線（關分頁時 WebRTC 自己的 close 事件可能要等很久）。
 // ponytail: 信任雙方瀏覽器（朋友對戰用），不防作弊；連不上的網路環境要加 TURN 伺服器
 let net = null, shotBy = 0, aimSent = 0;
-const netQ = [], PEER_PREFIX = 'pool3d-room-', netMsgEl = document.getElementById('netMsg');
+const match = { race: 3, score: [0, 0], rack: 0 }; // 搶 race 局；rack 決定誰開球（輪流）
+const netQ = [], PEER_PREFIX = 'pool3d-room-', $ = id => document.getElementById(id);
 const notMine = () => cpuTurn() || !!(net && (!net.open || game.cur !== net.me) && !game.over);
 const send = m => net?.open && net.conn.send(m);
+const matchDone = () => Math.max(...match.score) >= match.race;
+const scoreText = () => net ? `你 ${match.score[net.me]} : ${match.score[1 - net.me]} 對手` : '';
+const inviteLink = () => net ? location.origin + location.pathname + '?room=' + net.code : '';
 const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) => {
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
   sc.onload = ok; sc.onerror = bad; document.head.append(sc);
 });
-function leaveNet() { if (net) { const p = net.peer; net = null; p?.destroy(); } netQ.length = 0; }
+function leaveNet() {
+  if (net) { const n = net; net = null; try { n.conn?.open && n.conn.send({ t: 'bye' }); } catch {} setTimeout(() => n.peer?.destroy(), 200); }
+  netQ.length = 0; history.replaceState(null, '', location.pathname);
+}
 function sendSync(reset) {
-  send({ t: 'sync', reset, mode, b: balls.map(b => [b.x, b.z, b.active ? 1 : 0]),
+  send({ t: 'sync', reset, mode, match, b: balls.map(b => [b.x, b.z, b.active ? 1 : 0]),
     g: { cur: game.cur, groups: game.groups, ballInHand: game.ballInHand, breakShot: game.breakShot, over: game.over } });
 }
 function applySync(m) {
-  if (m.reset) { mode = m.mode; newGame(); }
+  mode = m.mode; Object.assign(match, m.match);
+  if (m.reset) newGame();
   m.b.forEach(([x, z, a], i) => (a ? place(balls[i], x, z) : hide(balls[i])));
   Object.assign(game, m.g); state = game.over ? 'over' : 'aim'; ai = null; // 訊息文字由本機自己的 endShot 產生（「你/對手」視角才對）
 }
@@ -854,39 +913,87 @@ function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同�
     aimSent = performance.now(); send({ t: 'aim', y: yaw, x: cueBall.x, z: cueBall.z });
   }
 }
+function connLost(bye) {
+  const c = net.conn; net.conn = null; net.open = false; net.lost = true; netQ.length = 0; c?.close();
+  flash(bye ? '對手離開了對戰' : '與對手的連線中斷了', 1e9);
+  document.exitPointerLock?.(); // 跳回選單，讓狀態一目了然
+}
+setInterval(() => { // 心跳
+  if (!net?.open) return;
+  send({ t: 'ping' });
+  if (performance.now() - net.rx > 8000) connLost(false);
+}, 1000);
 function setupConn(c) {
   net.conn = c;
-  c.on('open', () => { net.open = true; netMsgEl.textContent = ''; toast('對手已連線'); if (net.me === 0) { newGame(); sendSync(true); } });
-  c.on('data', m => netQ.push(m));
-  c.on('close', () => { if (net?.conn === c) { leaveNet(); flash('對手已離線，改為本機雙人', 4); } });
-}
-async function hostRoom(r) {
-  leaveNet(); mode = r === 9 ? 3 : 1; game.ch = 0;
-  const code = Math.random().toString(36).slice(2, 6).toUpperCase();
-  net = { me: 0, open: false, code }; newGame(); play();
-  try { await loadPeer(); } catch { leaveNet(); return flash('PeerJS 載入失敗，請檢查網路'); }
-  const peer = net.peer = new Peer(PEER_PREFIX + code);
-  peer.on('open', () => {
-    const link = location.origin + location.pathname + '?room=' + code;
-    navigator.clipboard?.writeText(link).then(() => toast('邀請連結已複製'), () => {});
-    netMsgEl.textContent = `房號 ${code}　邀請連結：${link}`;
+  c.on('open', () => {
+    Object.assign(net, { open: true, lost: false, rx: performance.now() });
+    flash(net.me === 0 ? '對手已加入！' : `已加入房間 ${net.code}`, 3); toast('連線成功');
+    if (net.me === 0) sendSync(true); // 房主送出完整局面（斷線重連也一樣接回來）
   });
-  peer.on('connection', c => (net.conn ? c.close() : setupConn(c)));
-  peer.on('error', e => { if (net?.open) return; leaveNet(); flash('連線錯誤：' + e.type, 4); }); // 已連上後信令伺服器斷線不影響對戰
+  c.on('data', m => {
+    if (!net || net.conn !== c) return;
+    net.rx = performance.now();
+    if (m.t === 'bye') connLost(true); else if (m.t !== 'ping') netQ.push(m);
+  });
+  c.on('close', () => { if (net?.conn === c) connLost(false); });
+}
+async function hostRoom(r, race) {
+  leaveNet(); mode = r === 9 ? 3 : 1; game.ch = 0; Object.assign(match, { race, score: [0, 0], rack: 0 });
+  const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+  net = { me: 0, open: false, code, ready: false }; newGame();
+  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
+  const peer = net.peer = new Peer(PEER_PREFIX + code);
+  peer.on('open', () => { if (net?.peer === peer) net.ready = true; });
+  peer.on('connection', c => (net?.conn ? c.close() : setupConn(c)));
+  peer.on('error', e => { if (net?.peer !== peer || net.ready) return; leaveNet(); $('netMsg').textContent = '建立房間失敗：' + e.type; });
 }
 async function joinRoom(code) {
-  code = code.trim().toUpperCase(); if (!code) return;
-  leaveNet(); net = { me: 1, open: false, code }; play();
-  try { await loadPeer(); } catch { leaveNet(); return flash('PeerJS 載入失敗，請檢查網路'); }
-  const peer = net.peer = new Peer();
-  peer.on('open', () => setupConn(peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' })));
-  peer.on('error', e => { if (net?.open) return; leaveNet(); flash(e.type === 'peer-unavailable' ? `找不到房間 ${code}` : '連線錯誤：' + e.type, 4); });
+  code = code.trim().toUpperCase(); if (code.length !== 4) return ($('netMsg').textContent = '房號是 4 個英數字');
+  leaveNet(); net = { me: 1, open: false, code };
+  history.replaceState(null, '', '?room=' + code);
+  try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
+  const peer = net.peer = new Peer(), mine = net;
+  const fail = t => { if (net !== mine || net.open || net.lost) return; leaveNet(); $('netMsg').textContent = t; };
+  peer.on('open', () => net === mine && setupConn(peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' })));
+  peer.on('error', e => fail(e.type === 'peer-unavailable' ? `找不到房間 ${code}，請確認房號，或房主已離開` : '連線錯誤：' + e.type));
+  setTimeout(() => fail('連線逾時：可能是網路擋住了點對點連線，換個網路再試'), 15000);
 }
-document.getElementById('online').addEventListener('click', e => {
-  const r = e.target.dataset?.r; if (r) hostRoom(+r);
-  if (e.target.id === 'join') joinRoom(document.getElementById('room').value);
+// 選單：開房選項（分段按鈕）
+for (const id of ['segGame', 'segRace']) $(id).addEventListener('click', e => {
+  if (!e.target.dataset.v) return;
+  $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', b === e.target));
 });
-{ const q = new URLSearchParams(location.search).get('room'); if (q) { document.getElementById('room').value = q; netMsgEl.textContent = `收到邀請：按「加入」進入房間 ${q.toUpperCase()}`; } }
+const segVal = id => +$(id).querySelector('.on').dataset.v;
+$('create').addEventListener('click', () => { $('netMsg').textContent = ''; hostRoom(segVal('segGame'), segVal('segRace')); });
+$('join').addEventListener('click', () => { $('netMsg').textContent = ''; joinRoom($('room').value); });
+$('room').addEventListener('keydown', e => { if (e.key === 'Enter') $('join').click(); });
+$('rCopy').addEventListener('click', () => {
+  $('rLink').select();
+  navigator.clipboard?.writeText(inviteLink()).then(() => { $('rCopy').textContent = '已複製 ✓'; setTimeout(() => ($('rCopy').textContent = '複製邀請連結'), 2000); }, () => {});
+});
+$('rPlay').addEventListener('click', play);
+$('rLeave').addEventListener('click', () => { leaveNet(); mode = 1; newGame(); openMenu(true); });
+$('rRetry').addEventListener('click', () => joinRoom(net.code));
+// 房間面板與畫面右上角狀態徽章：每一幀依狀態更新（只在內容變了才寫 DOM）
+let netUiKey = '';
+function updateNetUi() {
+  const st = !net ? '' : net.open ? 'ok' : net.lost ? 'lost' : net.me === 0 ? (net.ready ? 'wait' : 'make') : 'conn';
+  const key = [st, net?.code, scoreText(), match.race, mode, started, menuOpen].join('|');
+  if (key === netUiKey) return; netUiKey = key;
+  menuEl.classList.toggle('online', !!net); resumeBtn.hidden = !started || !!net;
+  const badge = $('netBadge'); badge.className = st; badge.hidden = !net; $('roomPanel').className = st;
+  if (!net) return;
+  const label = { make: '建立房間中…', wait: '等待對手加入…', conn: `正在連線房間 ${net.code}…`, ok: net.me === 0 ? '對手已加入，可以開始了' : '已加入房間，可以開始了',
+    lost: net.me === 0 ? '對手已離線・可傳邀請連結讓他重新加入' : '與房主的連線中斷' }[st];
+  $('rStat').textContent = label;
+  $('rInfo').textContent = `房號 ${net.code}　·　${rules()} 號球　·　搶 ${match.race} 局　·　你是${net.me === 0 ? '房主（先開球）' : '挑戰者'}`;
+  $('rScore').textContent = st === 'ok' || net.lost ? scoreText() : '';
+  $('rLink').value = inviteLink(); $('rLinkRow').hidden = net.me !== 0;
+  $('rPlay').textContent = started ? '回到球桌' : '進入球桌';
+  $('rRetry').hidden = !(net.me === 1 && net.lost);
+  badge.innerHTML = `<i></i>${label}<span>房號 ${net.code}${st === 'ok' || net.lost ? '　' + scoreText() + `（搶 ${match.race}）` : ''}</span>`;
+}
+{ const q = new URLSearchParams(location.search).get('room'); if (q) joinRoom(q); } // 打開邀請連結就直接連線
 
 // ---- 主迴圈 ----
 const clock = new THREE.Clock(), camTarget = new THREE.Vector3(), camPos = new THREE.Vector3(), camDir = new THREE.Vector3(1, 0, 0), follow = new THREE.Vector3(), q = new THREE.Quaternion(), axis = new THREE.Vector3();
@@ -895,6 +1002,7 @@ camera.position.set(-L - 0.8, 0.6, 0);
 function frame(_, fixedDt) {
   const dt = fixedDt ?? Math.min(clock.getDelta(), 0.05);
   sfxBudget = 0;
+  updateNetUi();
   if (menuOpen && !fixedDt && !net) { updateRoll(false); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
   if (state === 'moving') {
     acc += dt; simT += dt;
