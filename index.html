@@ -40,6 +40,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:syste
 #menu .sub{opacity:.6;font-size:13px;margin-bottom:18px}
 #menu h2{font-size:13px;opacity:.6;font-weight:600;margin:18px 0 8px}
 #modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#modes button:last-child{grid-column:span 2}
 #menu button{font:600 14px system-ui,"PingFang TC",sans-serif;color:#fff;background:#1f5a3a;border:1px solid #6fd39a55;border-radius:9px;padding:11px 8px;cursor:pointer}
 #menu button:hover{background:#2a7a4f}
 #menu button.cur{box-shadow:0 0 0 2px #ffe066}
@@ -484,15 +485,9 @@ function step(dt) {
 }
 
 // ---- 模式與規則 ----
-const MODES = ['8 號球・對電腦', '8 號球・雙人', '9 號球・對電腦', '9 號球・雙人', '練習', '挑戰'];
-const CHALLENGES = [ // cue: 母球位置；balls: [球號, x, z]；shots: 限制桿數
-  { name: '小切角進角袋', shots: 1, cue: [0.4, 0.3], balls: [[1, 0.9, 0.45]] },
-  { name: '切球進中袋', shots: 1, cue: [0.6, -0.1], balls: [[2, 0.25, 0.45]] },
-  { name: '三球清台', shots: 3, cue: [-0.2, 0.1], balls: [[1, 0.8, 0.5], [2, -0.9, -0.45], [3, 0, -0.5]] },
-  { name: '五球走位', shots: 5, cue: [-0.6, 0], balls: [[1, 1.1, 0.5], [2, 0.6, -0.3], [3, -0.3, 0.4], [4, -1.0, -0.5], [5, 0.2, 0]] },
-];
+const MODES = ['8 號球・對電腦', '8 號球・雙人', '9 號球・對電腦', '9 號球・雙人', '練習'];
 let mode = 0;
-const rules = () => mode < 2 ? 8 : mode < 4 ? 9 : mode === 4 ? 'practice' : 'challenge';
+const rules = () => mode < 2 ? 8 : mode < 4 ? 9 : 'practice';
 const cpuMode = () => mode === 0 || mode === 2;
 const cpuTurn = () => cpuMode() && game.cur === 1 && !game.over;
 const nameOf = i => net ? (i === net.me ? '你' : '對手') : cpuMode() && i === 1 ? '電腦' : `玩家 ${i + 1}`;
@@ -518,22 +513,16 @@ function updateMarker(t) {
   markSprite.position.set(b.x, 2 * R + 0.045 + 0.008 * Math.sin(t * 4), b.z);
   markRing.position.set(b.x, 0.003, b.z);
 }
-const game = { cur: 0, groups: [null, null], ballInHand: false, over: false, breakShot: false, ch: 0, shotsLeft: 0 };
+const game = { cur: 0, groups: [null, null], ballInHand: false, over: false, breakShot: false };
 let state = 'aim', ai = null;
 
 function newGame() {
   balls.forEach(hide);
   const r = rules();
   Object.assign(game, { cur: net ? match.rack % 2 : 0, groups: [null, null], ballInHand: r === 'practice', over: false, breakShot: r === 8 || r === 9 });
-  if (r === 9) rack9();
-  else if (r === 'challenge') {
-    const c = CHALLENGES[game.ch];
-    place(cueBall, ...c.cue);
-    for (const [n, x, z] of c.balls) place(balls[n], x, z);
-    game.shotsLeft = c.shots;
-  } else rack8();
+  if (r === 9) rack9(); else rack8();
   state = 'aim'; ai = null; rec = [];
-  flash(r === 'challenge' ? `挑戰 ${game.ch + 1}：${CHALLENGES[game.ch].name}` : r === 'practice' ? '練習模式：隨時自由擺球' : (net ? `第 ${match.rack + 1} 局（搶 ${match.race}）　${nameOf(game.cur)} 開球` : `${MODES[mode]}　玩家 1 開球`));
+  flash(r === 'practice' ? '練習模式：隨時自由擺球' : (net ? `第 ${match.rack + 1} 局（搶 ${match.race}）　${nameOf(game.cur)} 開球` : `${MODES[mode]}　玩家 1 開球`));
 }
 function respawnCue() {
   let x = -L / 2;
@@ -555,7 +544,6 @@ function endShot() {
   if (shot.scratch) respawnCue();
   const r = rules();
   if (r === 'practice') return;
-  if (r === 'challenge') return endChallenge();
   if (r === 9) return end9();
   end8();
 }
@@ -587,17 +575,6 @@ function turnResult(foul, keep) {
   game.ballInHand = foul;
   const why = shot.scratch ? '母球落袋' : shot.firstHit == null ? '沒有碰到球' : '先碰到錯誤的球';
   flash(foul ? `犯規！${why} → ${nameOf(game.cur)} 自由球` : keep ? `${nameOf(game.cur)} 繼續` : `換 ${nameOf(game.cur)}`);
-}
-function endChallenge() {
-  game.shotsLeft--;
-  if (shot.scratch) return gameOver('母球落袋，挑戰失敗');
-  if (!balls.some(b => b.active && b.n)) {
-    game.over = true; state = 'over'; flash('挑戰成功！', 2);
-    const m = mode;
-    return setTimeout(() => { if (mode === m) { game.ch = (game.ch + 1) % CHALLENGES.length; newGame(); } }, 2200);
-  }
-  if (game.shotsLeft <= 0) return gameOver('桿數用完，挑戰失敗');
-  flash(`剩 ${game.shotsLeft} 桿`);
 }
 
 // ---- 電腦對手 ----
@@ -686,7 +663,7 @@ function play() { ac.resume(); started = true; openMenu(false); lockPointer(); }
 document.getElementById('modes').innerHTML = MODES.map((m, i) => `<button data-i="${i}">${m}</button>`).join('');
 document.getElementById('modes').addEventListener('click', e => {
   const i = e.target.dataset?.i; if (i == null) return;
-  leaveNet(); mode = +i; game.ch = 0; newGame(); play();
+  leaveNet(); mode = +i; newGame(); play();
 });
 resumeBtn.addEventListener('click', play);
 for (const [id, key, apply] of [['vol', 'vol', v => (master.gain.value = v)], ['sens', 'sens', () => {}]]) {
@@ -848,10 +825,6 @@ function updateHud() {
     const lo = lowest();
     out.push(...[0, 1].map(i => playerRow(i, '')), `<div class="row">${range(1, 9).map(n => chip(n, potted(n), n === lo)).join('')}</div>`);
   }
-  if (r === 'challenge') {
-    const c = CHALLENGES[game.ch];
-    out.push(`<div class="row"><span class="name">挑戰 ${game.ch + 1}/${CHALLENGES.length}</span><span class="grp">${c.name}　剩 ${game.shotsLeft} 桿</span>${c.balls.map(([n]) => chip(n, potted(n))).join('')}</div>`);
-  }
   if (r === 'practice') out.push(`<div class="row"><span class="grp">已進袋</span>${range(1, 15).map(n => chip(n, potted(n))).join('')}</div>`);
   const html = out.join('');
   if (html !== hudHtml) hudEl.innerHTML = hudHtml = html; // 只有內容變了才重畫 DOM
@@ -938,7 +911,7 @@ function setupConn(c) {
   c.on('close', () => { if (net?.conn === c) connLost(false); });
 }
 async function hostRoom(r, race) {
-  leaveNet(); mode = r === 9 ? 3 : 1; game.ch = 0; Object.assign(match, { race, score: [0, 0], rack: 0 });
+  leaveNet(); mode = r === 9 ? 3 : 1; Object.assign(match, { race, score: [0, 0], rack: 0 });
   const code = Math.random().toString(36).slice(2, 6).toUpperCase();
   net = { me: 0, open: false, code, ready: false }; newGame();
   try { await loadPeer(); } catch { leaveNet(); return ($('netMsg').textContent = 'PeerJS 載入失敗，請檢查網路'); }
