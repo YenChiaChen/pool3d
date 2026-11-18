@@ -1548,9 +1548,10 @@ const scoreText = () => net ? T(`你 ${match.score[net.me]} : ${match.score[1 - 
 const inviteLink = () => net ? location.origin + location.pathname + '?room=' + net.code : '';
 // NAT 穿透：只靠 STUN 的話，兩邊都在嚴格 NAT 後面（手機網路、公司／學校網路）就打不通，要靠 TURN 中繼轉送。
 // TURN_API：到 metered.ca 註冊免費帳號（每月 20GB），建立 TURN app 後把「credentials 網址」（含 apiKey）貼在這裡。留空就只用 STUN + PeerJS 的公用 TURN。
-const TURN_API = '';
+const TURN_API = 'https://yenchiachen.metered.live/api/v1/turn/credentials?apiKey=047ce0f5f7f858f6bd6b8205afa30537c0ed'; // 免費試用 500 MB；額度在 dashboard.metered.ca 看
 const ICE_BASE = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
 const ICE_PEERJS = [{ urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }]; // PeerJS 預設的公用 TURN，常常塞車，當最後備援
+const FORCE_RELAY = new URLSearchParams(location.search).has('relay'); // ?relay：強制走 TURN，測中繼用（加入房間時網址會被改寫，所以一載入就讀）
 let iceCache = null; // ponytail: 一個分頁只抓一次憑證；Metered 的憑證若改成會過期的，再改成每次開房重抓
 async function peerOpts() {
   if (!iceCache) {
@@ -1558,7 +1559,7 @@ async function peerOpts() {
     if (TURN_API) try { const r = await fetch(TURN_API, { signal: AbortSignal.timeout(5000) }); if (r.ok) turn = (await r.json()).filter(s => s && s.urls); } catch {}
     iceCache = [...ICE_BASE, ...turn, ...ICE_PEERJS];
   }
-  return { config: { iceServers: iceCache } };
+  return { config: { iceServers: iceCache, ...(FORCE_RELAY && { iceTransportPolicy: 'relay' }) } };
 }
 const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) => {
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
