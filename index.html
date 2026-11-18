@@ -33,12 +33,30 @@ body.inmenu #hud,body.inmenu #coach,body.res #coach,body.res #hud .play{display:
 #topR{position:fixed;top:14px;right:20px;display:flex;gap:8px}
 .hbtn{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;background:rgba(13,14,14,.78);border:1px solid var(--ln);font-size:13px;color:var(--tx2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap}
 .hbtn.on{background:var(--tx);color:#111}
-.hbtn.icon{padding:0 11px;font-size:16px}#micBtn.on{background:var(--ac);color:#111;border-color:var(--ac)}
+.hbtn.icon{padding:0 11px;font-size:16px}
 #emoBar{position:fixed;top:58px;right:20px;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(13,14,14,.88);border:1px solid var(--ln);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 #emoBar button{font-size:24px;width:42px;height:42px;border-radius:50%}#emoBar button:hover{background:rgba(255,255,255,.1)}
-.emo{position:fixed;font-size:46px;line-height:1;pointer-events:none;z-index:50;text-shadow:0 4px 18px rgba(0,0,0,.5);animation:emoUp 2.4s ease-out forwards}
-@keyframes emoUp{0%{opacity:0;transform:translate(-50%,12px) scale(.4)}12%{opacity:1;transform:translate(-50%,0) scale(1.18)}22%{transform:translate(-50%,0) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-44px)}}
-.badge b{font-weight:400}
+.say{position:fixed;transform:translateX(-50%);max-width:280px;padding:8px 14px;border-radius:14px;background:rgba(242,242,238,.95);color:#121413;font-size:15px;font-weight:500;line-height:1.35;overflow-wrap:anywhere;pointer-events:none;z-index:49;box-shadow:0 6px 24px rgba(0,0,0,.35);animation:sayIn 5s ease-out forwards}
+.say::before{content:"";position:absolute;left:50%;top:-6px;margin-left:-6px;border:6px solid transparent;border-top:0;border-bottom-color:rgba(242,242,238,.95)}
+@keyframes sayIn{0%{opacity:0;transform:translate(-50%,6px)}6%{opacity:1;transform:translate(-50%,0)}88%{opacity:1}100%{opacity:0}}
+#chatBox{position:fixed;top:112px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px;width:min(420px,calc(100vw - 32px));border-radius:999px;background:rgba(13,14,14,.92);border:1px solid var(--ln);z-index:60;pointer-events:auto}
+#chatBox input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--tx);font-size:15px;padding:0 12px}
+#chatBox button{padding:8px 16px;border-radius:999px;background:var(--ac);color:#111;font-weight:600;font-size:14px}
+body.touch #chatBox{top:62px}
+.emo{position:fixed;transform:translateX(-50%);pointer-events:none;z-index:50;animation:emoLife 2.8s ease-out forwards}
+.emo .in{display:flex;flex-direction:column;align-items:center;gap:6px}
+.emo b{display:block;font-size:58px;line-height:1;font-weight:400;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+.emo small{font:900 15px/1.2 -apple-system,"PingFang TC",system-ui,sans-serif;padding:4px 10px;border-radius:6px;background:#ffd23f;color:#111;white-space:nowrap;transform:rotate(-5deg);box-shadow:0 4px 12px rgba(0,0,0,.45);letter-spacing:.02em}
+@keyframes emoLife{0%{opacity:0;margin-top:14px}8%{opacity:1;margin-top:0}82%{opacity:1}100%{opacity:0;margin-top:-30px}}
+.a0 b{animation:wob .45s ease-in-out infinite alternate}@keyframes wob{from{transform:rotate(-22deg) scale(1.05)}to{transform:rotate(22deg) scale(.95)}}
+.a1 b{animation:cool .7s cubic-bezier(.3,1.6,.5,1) both}@keyframes cool{from{transform:translateY(-80px) scale(.6)}to{transform:none}}
+.a1 small{animation:nod .5s .7s ease-in-out 3 alternate}@keyframes nod{to{transform:rotate(3deg) scale(1.08)}}
+.a2 b{animation:hop .32s ease-in-out infinite alternate}@keyframes hop{from{transform:translateY(0) scaleY(.85)}to{transform:translateY(-22px) scaleY(1.05)}}
+.a3 b{animation:beg .09s linear infinite alternate}@keyframes beg{from{transform:translateX(-5px) rotate(-4deg)}to{transform:translateX(5px) rotate(4deg)}}
+.a4 b{animation:dead 1.1s ease-in both}@keyframes dead{0%{transform:scale(.3) rotate(0)}40%{transform:scale(1.25) rotate(380deg)}60%{transform:scale(1) rotate(360deg)}80%{transform:rotate(350deg)}100%{transform:rotate(360deg) translateY(6px)}}
+.a4 small{animation:beg .08s linear 10 alternate}
+.a5 b{animation:fire .5s ease-in-out infinite alternate}@keyframes fire{from{transform:scale(1);filter:drop-shadow(0 0 6px #ff7a18)}to{transform:scale(1.45);filter:drop-shadow(0 0 26px #ff3d00)}}
+.a5 small{background:#ff3d00;color:#fff}
 body.touch .badge small{display:none} /* 手機：右上按鈕變多，房號只留在選單裡 */
 .bars{display:flex;gap:3px}.bars i{width:3px;height:12px;border-radius:1px;background:currentColor}
 .badge{pointer-events:none}
@@ -356,9 +374,10 @@ body.touch .cSteps{display:none}
 <body class="inmenu">
 <div id="hud">
   <div id="emoBar" hidden></div>
+  <form id="chatBox" hidden><input id="chatIn" maxlength="60" autocomplete="off" enterkeyhint="send" placeholder="說點什麼…"><button type="submit">送出</button></form>
   <div id="modeLabel"></div>
   <div id="topC"><div id="board"></div><div id="info"></div></div>
-  <div id="topR"><div id="netBadge" class="hbtn badge" hidden></div><button id="emoBtn" class="hbtn icon" hidden>😀</button><button id="micBtn" class="hbtn icon" hidden>🎤</button><button id="fsBtn" class="hbtn t-only">全螢幕</button><button id="viewBtn" class="hbtn t-only">俯視</button><button id="pauseBtn" class="hbtn"><span class="bars t-only"><i></i><i></i></span><span class="d-only">暫停</span><kbd class="d-only">ESC</kbd></button></div>
+  <div id="topR"><div id="netBadge" class="hbtn badge" hidden></div><button id="emoBtn" class="hbtn icon" hidden>😀</button><button id="chatBtn" class="hbtn icon" hidden>💬</button><button id="fsBtn" class="hbtn t-only">全螢幕</button><button id="viewBtn" class="hbtn t-only">俯視</button><button id="pauseBtn" class="hbtn"><span class="bars t-only"><i></i><i></i></span><span class="d-only">暫停</span><kbd class="d-only">ESC</kbd></button></div>
   <div id="pots"></div>
   <div id="foul"><div class="fh"><span class="tag">犯規</span><span id="foulWhy"></span></div><div id="foulTitle"></div><div id="foulDesc"></div><div class="fbar"><i></i></div></div>
   <div class="play">
@@ -514,7 +533,7 @@ const DICT = {
   '目標球與母球走向': 'Object and cue ball paths', '撞擊後兩顆球的預測方向': 'Predicted directions of both balls after contact',
   '9 號球目標提示': '9-ball target marker', '在下一顆該打的球上顯示號碼 · N': 'Show the number above the next ball to hit · N', '擊球': 'Shooting',
   '每桿打完打點歸零': 'Reset spin after each shot', '關閉則保留上一桿的打點與仰角': "When off, the last shot's spin and elevation are kept",
-  '瞄準靈敏度（滑鼠與觸控拖曳）': 'Aim sensitivity (mouse and touch)', '新手教學': 'Tutorial', '下一局重看教學': 'Show tutorial next game', '音量': 'Volume',
+  '瞄準靈敏度（滑鼠與觸控拖曳）': 'Aim sensitivity (mouse and touch)', '新手教學': 'Tutorial', '下一局重看教學': 'Show tutorial next game', '音量': 'Volume', '送出': 'Send',
 };
 if (EN) {
   document.documentElement.lang = 'en'; document.title = DICT[document.title] || document.title;
@@ -1055,7 +1074,7 @@ canvas.addEventListener('click', () => { if (!menuOpen && !locked() && state !==
 document.addEventListener('pointerlockchange', () => {
   if (locked()) return;
   charging = false; lastUnlock = performance.now();
-  if (!menuOpen && state !== 'over') showScreen('pause');
+  if (!menuOpen && state !== 'over' && !chatting) showScreen('pause');
 });
 
 // 設定記在這台瀏覽器
@@ -1191,12 +1210,12 @@ $('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSe
 
 const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Right-click / X', 'Cancel while charging'], ['Arrow keys', 'Spin (follow, draw, side)'],
   ['Q / E', 'Cue elevation (jump, masse)'], ['C', 'Reset spin and elevation'], ['Wheel', 'Zoom'], ['W A S D', 'Move cue ball (ball in hand)'], ['V', 'Top view'],
-  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['M', 'Mic on/off (online)']];
+  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['Enter / T', 'Chat (online)']];
 const TOUCH_EN = [['One-finger drag', 'Aim left/right, tilt view up/down'], ['Pinch', 'Zoom'], ['Power bar (right)', 'Pull down to charge, release to shoot; push back to the top to cancel'], ['Cue ball (bottom left)', 'Set spin and cue elevation'],
   ['Move cue ball', 'Turn on with ball in hand, then drag to place'], ['Fine aim', 'Lower drag sensitivity for precise aiming'], ['Top-right buttons', 'Top view / pause']];
 const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['右鍵 / X', '蓄力時取消出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
-  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['M', '麥克風開關（線上對戰）']];
+  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['Enter / T', '打字聊天（線上對戰）']];
 const TOUCH = EN ? TOUCH_EN : [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
   ['移動母球', '自由球時開啟，拖曳擺放母球'], ['微調瞄準', '降低拖曳靈敏度，方便對準'], ['右上按鈕', '俯視 / 暫停']];
 const keysHtml = list => list.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('');
@@ -1215,8 +1234,8 @@ addEventListener('mousedown', e => { if (e.button === 2) return cancelCharge(); 
 addEventListener('contextmenu', e => locked() && e.preventDefault());
 addEventListener('mouseup', e => { if (e.button === 0 && charging && !touchPow) { charging = false; fire(); } });
 addEventListener('keydown', e => {
-  keys[e.code] = true;
   if (e.target.tagName === 'INPUT' && e.code !== 'Escape') return;
+  keys[e.code] = true;
   if (e.code === 'Tab' || e.code === 'Slash') { e.preventDefault(); if (dlg === 'help') closeModal(); else openModal('help', !menuOpen); return; }
   if (e.code === 'Escape') return onEscape();
   if (dlg) return;
@@ -1236,7 +1255,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyH') { settings.aim = helpers = !settings.aim; saveSettings(); refreshToggles(); flash(helpers ? T('瞄準輔助線：開', 'Aim guides: on') : T('瞄準輔助線：關', 'Aim guides: off'), 1.2); }
   if (e.code === 'KeyN') { settings.mark = !settings.mark; saveSettings(); refreshToggles(); flash(settings.mark ? T('目標提示：開', 'Target marker: on') : T('目標提示：關', 'Target marker: off'), 1.2); }
   if (e.code === 'KeyP') startReplay();
-  if (net?.open) { const d = /^Digit([1-6])$/.exec(e.code); if (d) sendEmo(d[1] - 1); if (e.code === 'KeyM') toggleMic(); }
+  if (net?.open) { const d = /^Digit([1-6])$/.exec(e.code); if (d) sendEmo(d[1] - 1); if ((e.code === 'Enter' && coachI < 0) || e.code === 'KeyT') { e.preventDefault(); openChat(); } }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -1575,7 +1594,7 @@ const loadPeer = () => window.Peer ? Promise.resolve() : new Promise((ok, bad) =
   sc.onload = ok; sc.onerror = bad; document.head.append(sc);
 });
 function leaveNet() {
-  voiceReset();
+  closeChat(false);
   if (net) { const n = net; net = null; try { n.conn?.open && n.conn.send({ t: 'bye' }); } catch {} setTimeout(() => n.peer?.destroy(), 200); }
   netQ.length = 0; history.replaceState(null, '', location.pathname);
 }
@@ -1598,58 +1617,65 @@ function cleanSync(m) {
 }
 // ---- 表情與語音（只在線上對戰）----
 // 表情：只傳清單裡的索引。語音：誰開麥就打一通單向的 PeerJS 語音電話給對方，對方只收不送；兩邊都開就是兩通。
-const EMOS = ['👍', '👏', '😂', '😮', '😭', '🔥'];
-$('emoBar').innerHTML = EMOS.map((e, i) => `<button data-i="${i}">${e}</button>`).join('');
+// 惡搞貼圖：emoji + 梗句 + 各自的動畫（.a0–.a5）。只傳索引，所以兩邊各自用自己的語言顯示
+const EMOS = [['🤡', T('小丑竟是我自己', 'Clown moment')], ['😎', T('就這？', 'That\'s it?')], ['🐔', T('菜', 'Noob')], ['🙏', T('拜託進', 'Please go in')], ['💀', T('笑死', 'I\'m dead')], ['🔥', T('神之一手', 'Godlike')]];
+$('emoBar').innerHTML = EMOS.map(([e, t], i) => `<button data-i="${i}" title="${t}" aria-label="${t}">${e}</button>`).join('');
 $('emoBar').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) sendEmo(+b.dataset.i); });
 $('emoBtn').addEventListener('click', () => ($('emoBar').hidden = !$('emoBar').hidden));
-$('micBtn').addEventListener('click', () => toggleMic());
 let emoT = 0;
+// 把泡泡／貼圖放在玩家名字正下方，左右不超出螢幕
+function placeUnder(el, p) {
+  const r = document.querySelectorAll('#board .pl')[p]?.getBoundingClientRect(), half = el.offsetWidth / 2;
+  el.style.left = clamp(r?.width ? r.left + r.width / 2 : innerWidth / 2, half + 8, innerWidth - half - 8) + 'px';
+  el.style.top = (r?.width ? r.bottom + 8 : 90) + 'px';
+}
 function showEmo(p, i) {
-  const el = document.createElement('div'), r = document.querySelectorAll('#board .pl')[p]?.getBoundingClientRect();
-  el.className = 'emo'; el.textContent = EMOS[i];
-  el.style.left = (r ? r.left + r.width / 2 : innerWidth / 2) + 'px'; el.style.top = (r ? r.bottom + 6 : 90) + 'px';
-  $('hud').append(el); setTimeout(() => el.remove(), 2500);
+  const el = document.createElement('div');
+  el.className = 'emo a' + i; el.innerHTML = `<div class="in"><b>${EMOS[i][0]}</b><small>${EMOS[i][1]}</small></div>`; // 固定清單，不含對方輸入
+  $('hud').append(el); placeUnder(el, p); setTimeout(() => el.remove(), 2900);
+  if (sayEl[p]?.isConnected) el.style.top = sayEl[p].getBoundingClientRect().bottom + 8 + 'px'; // 排在自己的聊天泡泡下面
 }
 function sendEmo(i) {
   $('emoBar').hidden = true;
   if (!net?.open || performance.now() - emoT < 800) return; // ponytail: 0.8 秒一個，防洗版
   emoT = performance.now(); send({ t: 'emo', i }); showEmo(net.me, i);
 }
-const voice = { on: false, opp: false, out: null, inc: null, stream: null, audio: Object.assign(new Audio(), { autoplay: true }) };
-async function toggleMic() {
-  if (voice.on) { micOff(); return send({ t: 'mic', on: false }); }
-  if (!net?.open || !navigator.mediaDevices?.getUserMedia || voice.asking) return;
-  voice.asking = true;
-  try { voice.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
-  catch { return flash(T('沒有取得麥克風權限', 'Microphone permission was denied'), 2); }
-  finally { voice.asking = false; }
-  if (!net?.open) return micOff();
-  voice.on = true; voice.out = net.peer.call(net.conn.peer, voice.stream);
-  send({ t: 'mic', on: true }); $('micBtn').classList.add('on'); toast(T('麥克風已開啟', 'Mic on'));
+// 打字聊天：Enter / T（手機點 💬）打開輸入框；訊息以泡泡顯示在發話者名字下方，只用 textContent 顯示
+const CHAT_MAX = 60;
+let chatting = false, chatT = 0; const sayEl = [];
+function showSay(p, text) {
+  sayEl[p]?.remove();
+  const el = sayEl[p] = document.createElement('div');
+  el.className = 'say'; el.textContent = text; el.style.animationDuration = Math.min(9, 3.5 + text.length * 0.08) + 's';
+  $('hud').append(el); placeUnder(el, p); el.addEventListener('animationend', () => el.remove());
+  const o = sayEl[1 - p]; // 手機上兩個名字靠很近：撞到對方的泡泡就排到它下面
+  if (o?.isConnected) { const a = el.getBoundingClientRect(), b = o.getBoundingClientRect(); if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) el.style.top = b.bottom + 8 + 'px'; }
 }
-function micOff() {
-  voice.on = false; voice.out?.close(); voice.out = null;
-  voice.stream?.getTracks().forEach(t => t.stop()); voice.stream = null; $('micBtn').classList.remove('on');
+function openChat() {
+  if (!net?.open || chatting) return;
+  chatting = true; $('emoBar').hidden = true; $('chatBox').hidden = false;
+  if (locked()) document.exitPointerLock(); // 打字時放開滑鼠，pointerlockchange 看到 chatting 就不會跳出暫停選單
+  setTimeout(() => $('chatIn').focus(), 0);
 }
-function onCall(c) {
-  if (!net?.conn || c.peer !== net.conn.peer) return c.close(); // 只接對手打來的
-  voice.inc?.close(); voice.inc = c; c.answer();
-  c.on('stream', s => { if (voice.inc !== c) return; voice.audio.srcObject = s; voice.audio.play().catch(() => {}); oppMic(true); });
-  c.on('close', () => voice.inc === c && oppMic(false));
+function closeChat(sendIt) {
+  if (!chatting) return;
+  const text = $('chatIn').value.trim().slice(0, CHAT_MAX);
+  chatting = false; $('chatIn').value = ''; $('chatBox').hidden = true; $('chatIn').blur();
+  if (sendIt && text && net?.open && performance.now() - chatT > 800) { chatT = performance.now(); send({ t: 'chat', s: text }); showSay(net.me, text); }
+  if (sendIt && !menuOpen) lockPointer(); // Enter 算使用者操作，可以直接鎖回滑鼠；Esc 不行，要再點一下球台
 }
-function oppMic(on) {
-  if (!on) { voice.inc?.close(); voice.inc = null; voice.audio.srcObject = null; }
-  if (on !== voice.opp) toast(on ? T('對手開了麥克風', 'Opponent turned on their mic') : T('對手關了麥克風', 'Opponent turned off their mic'));
-  voice.opp = on;
-}
-function voiceReset() { micOff(); voice.inc?.close(); voice.inc = null; voice.audio.srcObject = null; voice.opp = false; }
+$('chatIn').placeholder = T('說點什麼…', 'Say something…');
+$('chatBtn').addEventListener('click', openChat);
+$('chatBox').addEventListener('submit', e => { e.preventDefault(); closeChat(true); });
+$('chatIn').addEventListener('keydown', e => { if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); closeChat(false); } });
+$('chatIn').addEventListener('blur', () => { if (chatting && !$('chatIn').value.trim()) setTimeout(() => document.activeElement !== $('chatIn') && closeChat(false), 150); });
 function cleanMsg(m) {
   if (!m || typeof m !== 'object') return null;
   if (m.t === 'aim') return { t: 'aim', y: num(m.y, -1e3, 1e3), x: num(m.x, -L, L), z: num(m.z, -W, W) };
   if (m.t === 'shot') return { t: 'shot', y: num(m.y, -1e3, 1e3), p: num(m.p, 0, 1), tip: { x: num(m.tip?.x, -1, 1), y: num(m.tip?.y, -1, 1) }, el: num(m.el, 0.05, 1.1), x: num(m.x, -L, L), z: num(m.z, -W, W) };
   if (m.t === 'sync') return cleanSync(m);
   if (m.t === 'emo') return Number.isInteger(m.i) && m.i >= 0 && m.i < EMOS.length ? { t: 'emo', i: m.i } : null;
-  if (m.t === 'mic') return { t: 'mic', on: m.on === true };
+  if (m.t === 'chat' && typeof m.s === 'string') { const t = m.s.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, CHAT_MAX); return t ? { t: 'chat', s: t } : null; }
   return null;
 }
 function applySync(m) {
@@ -1671,7 +1697,7 @@ function netTick() { // 在主迴圈裡依序處理收到的訊息：出桿/同�
   }
 }
 function connLost(bye) {
-  voiceReset();
+  closeChat(false);
   const c = net.conn; net.conn = null; net.open = false; net.lost = true; netQ.length = 0; c?.close();
   flash(bye ? T('對手離開了對戰', 'Your opponent left the match') : T('與對手的連線中斷了', 'Lost the connection to your opponent'), 1e9);
   onTab = net.me === 1 ? 'join' : 'host'; showScreen('online'); // 直接跳到房間畫面（手機沒有滑鼠鎖定可解除，不能靠 pointerlockchange）
@@ -1691,7 +1717,7 @@ function setupConn(c) {
   c.on('data', m => {
     if (!net || net.conn !== c) return;
     net.rx = performance.now();
-    if (m?.t === 'bye') connLost(true); else if (m?.t !== 'ping') { const c2 = cleanMsg(m); if (c2?.t === 'emo') showEmo(1 - net.me, c2.i); else if (c2?.t === 'mic') oppMic(c2.on); else if (c2) netQ.push(c2); }
+    if (m?.t === 'bye') connLost(true); else if (m?.t !== 'ping') { const c2 = cleanMsg(m); if (c2?.t === 'emo') showEmo(1 - net.me, c2.i); else if (c2?.t === 'chat') showSay(1 - net.me, c2.s); else if (c2) netQ.push(c2); }
   });
   c.on('close', () => { if (net?.conn === c) connLost(false); });
 }
@@ -1704,7 +1730,6 @@ async function hostRoom(r, race) {
   const peer = net.peer = new Peer(PEER_PREFIX + code, opts);
   peer.on('open', () => { if (net?.peer === peer) net.ready = true; });
   peer.on('connection', c => (net?.conn ? c.close() : setupConn(c)));
-  peer.on('call', onCall);
   peer.on('error', e => { if (net?.peer !== peer || net.ready) return; leaveNet(); $('netMsg').textContent = T('建立房間失敗：', 'Could not create room: ') + e.type; });
 }
 async function joinRoom(code) {
@@ -1715,7 +1740,6 @@ async function joinRoom(code) {
   const mine = net, opts = await peerOpts(); if (net !== mine) return;
   const peer = net.peer = new Peer(opts);
   const fail = t => { if (net !== mine || net.open || net.lost) return; leaveNet(); $('netMsg').textContent = t; };
-  peer.on('call', onCall);
   peer.on('open', () => {
     if (net !== mine) return;
     const c = peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' });
@@ -1747,11 +1771,11 @@ $('onBack').addEventListener('click', leaveToHome);
 $('rRetry').addEventListener('click', () => joinRoom(net.code));
 function updateNetUi() {
   const st = !net ? '' : net.open ? 'ok' : net.lost ? 'lost' : net.me === 0 ? (net.ready ? 'wait' : 'make') : 'conn';
-  const key = [st, voice.opp, net?.code, match.score.join(), menuOpen, screen, onTab, started, $('netMsg').textContent, cfg.game, cfg.race].join('|');
+  const key = [st, net?.code, match.score.join(), menuOpen, screen, onTab, started, $('netMsg').textContent, cfg.game, cfg.race].join('|');
   if (key === netUiKey) return; netUiKey = key;
   const badge = $('netBadge'); badge.hidden = !net; badge.className = 'hbtn badge ' + st;
-  if (net) badge.innerHTML = `<i></i><span class="d-only">${(EN ? { make: 'Creating', wait: 'Waiting', conn: 'Connecting', ok: 'Connected', lost: 'Disconnected' } : { make: '建立中', wait: '等待對手', conn: '連線中', ok: '已連線', lost: '連線中斷' })[st]}</span><small>${net.code}</small>${voice.opp ? '<b>🎙</b>' : ''}`;
-  $('emoBtn').hidden = $('micBtn').hidden = st !== 'ok'; if (st !== 'ok') $('emoBar').hidden = true;
+  if (net) badge.innerHTML = `<i></i><span class="d-only">${(EN ? { make: 'Creating', wait: 'Waiting', conn: 'Connecting', ok: 'Connected', lost: 'Disconnected' } : { make: '建立中', wait: '等待對手', conn: '連線中', ok: '已連線', lost: '連線中斷' })[st]}</span><small>${net.code}</small>`;
+  $('emoBtn').hidden = $('chatBtn').hidden = st !== 'ok'; if (st !== 'ok') $('emoBar').hidden = true;
   if (screen !== 'online') return;
   const host = onTab === 'host';
   document.querySelectorAll('#onTabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === onTab));
@@ -1897,7 +1921,7 @@ function frame(_, fixedDt) {
 renderer.setAnimationLoop(frame);
 resetMatch(cfg.race); mode = modeFromCfg(); newGame(); hideMsg(); refreshToggles();
 { const q = new URLSearchParams(location.search).get('room'); if (q) { onTab = 'join'; cfg.opp = 'online'; joinRoom(q); showScreen('online'); } else showScreen('home'); }
-window.pool = { get net() { return net; }, voice, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), get yaw() { return yaw; }, setPitch: v => (pitch = v), setTop: v => (topView = v), setDemo: v => (demo = v), charge: v => { power = v; charging = touchPow = v > 0; }, fire: () => { charging = touchPow = false; fire(); }, setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
+window.pool = { get net() { return net; }, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), get yaw() { return yaw; }, setPitch: v => (pitch = v), setTop: v => (topView = v), setDemo: v => (demo = v), charge: v => { power = v; charging = touchPow = v > 0; }, fire: () => { charging = touchPow = false; fire(); }, setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
 </script>
 </body>
 </html>
