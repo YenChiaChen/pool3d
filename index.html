@@ -124,6 +124,7 @@ body:not(.mine) #power,body:not(.mine) #tpow{opacity:.35}
 #hint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);font-size:12px;color:var(--tx2);white-space:nowrap;text-shadow:0 1px 3px #000}
 #keyHints{position:fixed;right:24px;bottom:24px;display:grid;grid-template-columns:auto auto;gap:6px 10px;align-items:center;font-size:12px;color:var(--mu)}
 #keyHints kbd{justify-self:end;padding:3px 7px;border-radius:5px;border:1px solid var(--ln2);color:var(--tx2)}
+#keyHints .alt{color:#ffd166;border-color:#ffd166;font-weight:600}
 #tpow{position:fixed;right:max(20px,env(safe-area-inset-right));top:64px;bottom:16px;width:64px;border-radius:32px;background:rgba(13,14,14,.82);border:1px solid var(--ln);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;touch-action:none}
 #tpow b{font:600 12px var(--mono)}
 #tpow small{font-size:10px;color:var(--mu);text-align:center;line-height:1.2}
@@ -384,7 +385,7 @@ body.touch .cSteps{display:none}
     <div id="tipBox"><div class="cueball"><i id="tipDot"></i></div><div class="tinfo"><div class="tv"><div><small>打點</small><b id="tipName">中心</b></div><div><small>仰角</small><b id="elevVal">3°</b></div></div><div class="tkeys d-only">←↑→↓ 打點 · Q/E 仰角 · C 歸零</div></div></div>
     <div id="power"><div class="plab"><span>力道</span><b id="powVal">0%</b></div><div class="ptrack"><span class="pmax"></span><div id="powFill"></div><i id="powLast"></i></div><div class="plab"><span></span><span id="lastLab"></span></div></div>
     <div id="hint"></div>
-    <div id="keyHints"><kbd>V</kbd><span>俯視</span><kbd>H</kbd><span>輔助線</span><kbd>P</kbd><span>重播上一桿</span><kbd>TAB</kbd><span>全部按鍵</span></div>
+    <div id="keyHints"><kbd class="alt">Alt</kbd><span class="alt">放開滑鼠</span><kbd>V</kbd><span>俯視</span><kbd>H</kbd><span>輔助線</span><kbd>P</kbd><span>重播上一桿</span><kbd>TAB</kbd><span>全部按鍵</span></div>
     <div id="tpow" class="t-only"><b id="tpowVal">0%</b><div class="tt"><div id="tpowFill"></div><div id="tpowKnob"></div></div><small>下拉<br>蓄力</small></div>
     <div id="tbar" class="t-only"><button id="moveBtn" class="hbtn">移動母球</button><button id="fineBtn" class="hbtn">微調瞄準</button></div>
   </div>
@@ -513,7 +514,7 @@ const wins = n => (n === 'You' ? 'You win' : n + ' wins');
 const gName = g => T(g, { 全色: 'solids', 花色: 'stripes' }[g] || g);
 const DICT = {
   '全螢幕': 'Fullscreen', '俯視': 'Top view', '暫停': 'Pause', '犯規': 'Foul', '打點': 'Spin', '中心': 'Center', '仰角': 'Elevation',
-  '←↑→↓ 打點 · Q/E 仰角 · C 歸零': '←↑→↓ spin · Q/E elevation · C reset', '力道': 'Power', '輔助線': 'Guides', '重播上一桿': 'Replay', '全部按鍵': 'All keys',
+  '←↑→↓ 打點 · Q/E 仰角 · C 歸零': '←↑→↓ spin · Q/E elevation · C reset', '力道': 'Power', '輔助線': 'Guides', '重播上一桿': 'Replay', '放開滑鼠': 'Free mouse', '全部按鍵': 'All keys',
   '下拉': 'Pull', '蓄力': 'down', '移動母球': 'Move cue ball', '微調瞄準': 'Fine aim', '把手機橫放，視野會更寬。': 'Turn your phone sideways for a wider view.', '知道了': 'Got it',
   '拖曳紅點：上＝高桿（跟進）、下＝低桿（拉回）、左右＝塞球': 'Drag the red dot: up = follow, down = draw, left/right = side spin', '球桿仰角': 'Cue elevation',
   '歸零': 'Reset', '完成': 'Done', '略過教學': 'Skip tutorial', '下一步': 'Next', '重播最後一桿': 'Replay last shot', '回主選單': 'Main menu', '再來一場': 'Play again',
@@ -1208,14 +1209,16 @@ for (const [id, apply, fmt] of [['vol', v => (master.gain.value = v), v => Math.
 $('setNav').addEventListener('click', e => { const t = e.target.closest('[data-st]')?.dataset.st; if (!t) return; document.querySelectorAll('#settings [data-st]').forEach(x => x.classList.toggle('on', x.dataset.st === t)); });
 $('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSettings(); $('tutReset').textContent = T('已設定，下次開局會顯示', 'Done, it shows next game'); });
 
+const ALT = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌥ Option' : 'Alt';
+document.querySelector('#keyHints kbd.alt').textContent = ALT;
 const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Right-click / X', 'Cancel while charging'], ['Arrow keys', 'Spin (follow, draw, side)'],
   ['Q / E', 'Cue elevation (jump, masse)'], ['C', 'Reset spin and elevation'], ['Wheel', 'Zoom'], ['W A S D', 'Move cue ball (ball in hand)'], ['V', 'Top view'],
-  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Alt', 'Release the mouse (click the table to resume)'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['Enter / T', 'Chat (online)']];
+  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], [ALT, 'Release the mouse (click the table to resume)'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['Enter / T', 'Chat (online)']];
 const TOUCH_EN = [['One-finger drag', 'Aim left/right, tilt view up/down'], ['Pinch', 'Zoom'], ['Power bar (right)', 'Pull down to charge, release to shoot; push back to the top to cancel'], ['Cue ball (bottom left)', 'Set spin and cue elevation'],
   ['Move cue ball', 'Turn on with ball in hand, then drag to place'], ['Fine aim', 'Lower drag sensitivity for precise aiming'], ['Top-right buttons', 'Top view / pause']];
 const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['右鍵 / X', '蓄力時取消出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
-  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Alt', '放開滑鼠（點球台繼續）'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['Enter / T', '打字聊天（線上對戰）']];
+  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], [ALT, '放開滑鼠（點球台繼續）'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['Enter / T', '打字聊天（線上對戰）']];
 const TOUCH = EN ? TOUCH_EN : [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
   ['移動母球', '自由球時開啟，拖曳擺放母球'], ['微調瞄準', '降低拖曳靈敏度，方便對準'], ['右上按鈕', '俯視 / 暫停']];
 const keysHtml = list => list.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('');
@@ -1316,14 +1319,14 @@ const COACH = [
   { k: 'aim', t: '瞄準', d: '左右移動滑鼠瞄準，上下移動調整視角。按住 Shift 可以微調。', m: '單指在球台上左右拖曳瞄準、上下拖曳調整視角；雙指捏合縮放鏡頭。' },
   { k: 'tip', t: '打點與仰角', d: '方向鍵移動左下角白球上的紅點：上＝高桿（跟進）、下＝低桿（拉回）、左右＝塞球。Q / E 調整球桿仰角。', m: '點左下角的白球，拖曳紅點：上＝高桿、下＝低桿、左右＝塞球。', fd: '#tipBox', ft: '#tipBox' },
   { k: 'shoot', t: '蓄力出桿', d: '按住滑鼠左鍵蓄力，放開就出桿。力道條上的白線是上一桿的力道。試著打一桿。', m: '按住右側力道條往下拉蓄力，放手出桿；拉回頂端可以取消。試著打一桿。', fd: '#power', ft: '#tpow' },
-  { k: 'view', t: '視角與暫停', d: 'V 切換俯視、P 重播上一桿、Esc 暫停、Tab 隨時查看全部按鍵。', m: '右上角可以切換俯視與暫停。暫停選單裡有完整操作說明。', fd: '#keyHints', ft: '#topR' },
+  { k: 'view', t: '視角與暫停', d: `V 切換俯視、P 重播上一桿、Esc 暫停、${ALT} 放開滑鼠去點按鈕、Tab 隨時查看全部按鍵。`, m: '右上角可以切換俯視與暫停。暫停選單裡有完整操作說明。', fd: '#keyHints', ft: '#topR' },
 ];
 if (EN) [
 
   { t: 'Aim', d: 'Move the mouse left/right to aim, up/down to tilt the view. Hold Shift for fine aim.', m: 'Drag one finger on the table left/right to aim, up/down to tilt the view; pinch to zoom.' },
   { t: 'Spin and elevation', d: 'Arrow keys move the red dot on the cue ball (bottom left): up = follow, down = draw, left/right = side spin. Q / E change cue elevation.', m: 'Tap the cue ball at the bottom left and drag the red dot: up = follow, down = draw, left/right = side spin.' },
   { t: 'Shoot', d: 'Hold the left mouse button to charge, release to shoot. The white line on the power bar marks your last shot. Try one now.', m: 'Pull the power bar on the right down to charge and let go to shoot; push it back to the top to cancel. Try one now.' },
-  { t: 'View and pause', d: 'V toggles top view, P replays the last shot, Esc pauses, Tab shows all controls anytime.', m: 'The top-right buttons switch to top view and pause. The pause menu has the full controls list.' }].forEach((c, i) => Object.assign(COACH[i], c));
+  { t: 'View and pause', d: `V toggles top view, P replays the last shot, Esc pauses, ${ALT} frees the mouse to click buttons, Tab shows all controls anytime.`, m: 'The top-right buttons switch to top view and pause. The pause menu has the full controls list.' }].forEach((c, i) => Object.assign(COACH[i], c));
 let coachI = -1;
 function coachStart() { coachI = 0; renderCoach(); }
 function coachEvent(k) { if (coachI >= 0 && COACH[coachI]?.k === k) { coachI++; renderCoach(); } }
