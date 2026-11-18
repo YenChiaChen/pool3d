@@ -33,6 +33,7 @@ First-person 3D American pool that runs in the browser. Nothing to install.
 | W A S D | Move the cue ball (ball in hand) |
 | V / H / N / P | Top view / aim guides / target marker / replay |
 | Esc | Pause / menu |
+| Alt | Release the mouse to click buttons (click the table to resume) |
 | Tab | All controls |
 | 1 – 6 | Meme stickers (online) |
 | Enter / T | Chat (online) |

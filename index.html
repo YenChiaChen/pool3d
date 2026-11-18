@@ -1069,12 +1069,12 @@ document.body.classList.toggle('touch', isTouch);
 let demo = false; // ponytail: 錄製示範影片用，假裝滑鼠已鎖定
 const locked = () => demo || document.pointerLockElement === canvas;
 const lockPointer = () => { if (isTouch) return; try { canvas.requestPointerLock()?.catch?.(() => {}); } catch {} };
-let lastUnlock = 0;
+let lastUnlock = 0, freeMouse = false; // freeMouse：按 Alt 放開滑鼠去點按鈕，不跳暫停選單
 canvas.addEventListener('click', () => { if (!menuOpen && !locked() && state !== 'over') lockPointer(); });
 document.addEventListener('pointerlockchange', () => {
-  if (locked()) return;
+  if (locked()) { freeMouse = false; return; }
   charging = false; lastUnlock = performance.now();
-  if (!menuOpen && state !== 'over' && !chatting) showScreen('pause');
+  if (!menuOpen && state !== 'over' && !chatting && !freeMouse) showScreen('pause');
 });
 
 // 設定記在這台瀏覽器
@@ -1210,12 +1210,12 @@ $('tutReset').addEventListener('click', () => { settings.tutDone = false; saveSe
 
 const KEYS_EN = [['Mouse', 'Aim / tilt view'], ['Shift + mouse', 'Fine aim'], ['Hold left button', 'Charge, release to shoot'], ['Right-click / X', 'Cancel while charging'], ['Arrow keys', 'Spin (follow, draw, side)'],
   ['Q / E', 'Cue elevation (jump, masse)'], ['C', 'Reset spin and elevation'], ['Wheel', 'Zoom'], ['W A S D', 'Move cue ball (ball in hand)'], ['V', 'Top view'],
-  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['Enter / T', 'Chat (online)']];
+  ['H', 'Aim guides on/off'], ['N', '9-ball target marker on/off'], ['P', 'Replay last shot'], ['R', 'Restart / next rack'], ['Esc', 'Pause / menu'], ['Alt', 'Release the mouse (click the table to resume)'], ['Tab', 'Show / hide controls'], ['1 – 6', 'Emotes (online)'], ['Enter / T', 'Chat (online)']];
 const TOUCH_EN = [['One-finger drag', 'Aim left/right, tilt view up/down'], ['Pinch', 'Zoom'], ['Power bar (right)', 'Pull down to charge, release to shoot; push back to the top to cancel'], ['Cue ball (bottom left)', 'Set spin and cue elevation'],
   ['Move cue ball', 'Turn on with ball in hand, then drag to place'], ['Fine aim', 'Lower drag sensitivity for precise aiming'], ['Top-right buttons', 'Top view / pause']];
 const KEYS = EN ? KEYS_EN : [['滑鼠', '瞄準 / 上下調整視角'], ['Shift + 滑鼠', '微調瞄準'], ['按住左鍵', '蓄力，放開出桿'], ['右鍵 / X', '蓄力時取消出桿'], ['方向鍵', '打點（高桿、低桿、左右塞）'],
   ['Q / E', '球桿仰角（跳球、扎桿）'], ['C', '打點與仰角歸零'], ['滾輪', '鏡頭遠近'], ['W A S D', '自由球時移動母球'], ['V', '俯視'],
-  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['Enter / T', '打字聊天（線上對戰）']];
+  ['H', '瞄準輔助線開關'], ['N', '9 號球目標提示開關'], ['P', '重播上一桿'], ['R', '重新開局 / 下一局'], ['Esc', '暫停 / 選單'], ['Alt', '放開滑鼠（點球台繼續）'], ['Tab', '顯示 / 隱藏按鍵說明'], ['1 – 6', '表情（線上對戰）'], ['Enter / T', '打字聊天（線上對戰）']];
 const TOUCH = EN ? TOUCH_EN : [['單指拖曳', '左右瞄準、上下調整視角'], ['雙指捏合', '鏡頭遠近'], ['右側力道條', '往下拉蓄力，放手出桿；拉回頂端取消'], ['左下白球', '設定打點與球桿仰角'],
   ['移動母球', '自由球時開啟，拖曳擺放母球'], ['微調瞄準', '降低拖曳靈敏度，方便對準'], ['右上按鈕', '俯視 / 暫停']];
 const keysHtml = list => list.map(([k, d]) => `<kbd>${k}</kbd><span>${d}</span>`).join('');
@@ -1240,6 +1240,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape') return onEscape();
   if (dlg) return;
   if (e.code === 'KeyX') cancelCharge();
+  if ((e.code === 'AltLeft' || e.code === 'AltRight') && locked() && !demo) { e.preventDefault(); freeMouse = true; document.exitPointerLock(); flash(T('滑鼠已放開，點球台繼續', 'Mouse released, click the table to resume'), 1); return; }
   if (screen === 'home') {
     const o = { Digit1: 'cpu', Digit2: 'local', Digit3: 'online', Digit4: 'practice' }[e.code];
     if (o) { cfg.opp = o; saveCfg(); renderHome(); }
@@ -1257,7 +1258,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyP') startReplay();
   if (net?.open) { const d = /^Digit([1-6])$/.exec(e.code); if (d) sendEmo(d[1] - 1); if ((e.code === 'Enter' && coachI < 0) || e.code === 'KeyT') { e.preventDefault(); openChat(); } }
 });
-addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('keyup', e => { keys[e.code] = false; if (e.key === 'Alt') e.preventDefault(); }); // Windows 放開 Alt 會跳到瀏覽器選單列
 
 // ---- 觸控 ----
 const canPlace = () => state === 'aim' && (game.ballInHand || game.breakShot) && !notMine();
