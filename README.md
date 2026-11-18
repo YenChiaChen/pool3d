@@ -34,12 +34,13 @@ First-person 3D American pool that runs in the browser. Nothing to install.
 | V / H / N / P | Top view / aim guides / target marker / replay |
 | Esc | Pause / menu |
 | Tab | All controls |
+| 1 – 6 / M | Emotes / mic on-off (online) |
 
 On a phone: drag one finger to aim, pinch to zoom, pull the power bar on the right down to charge, and tap the cue ball at the bottom left to set spin.
 
 ## Online play
 
-Create a room, send the invite link to a friend, and pick single rack, race to 3, or race to 5. The connection is peer-to-peer through [PeerJS](https://peerjs.com/): there is no game server, and the two browsers send shots to each other directly. Some office or school networks block peer-to-peer connections, so it may not connect there.
+Create a room, send the invite link to a friend, and pick single rack, race to 3, or race to 5. During the match you can send emotes and turn on voice chat (the 😀 and 🎤 buttons, or keys 1–6 and M on desktop). The connection is peer-to-peer through [PeerJS](https://peerjs.com/): there is no game server, and the two browsers send shots to each other directly. When the two networks can't connect directly, traffic goes through a [Metered](https://www.metered.ca/) TURN relay.
 
 ## Run locally
 
