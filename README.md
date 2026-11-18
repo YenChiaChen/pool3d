@@ -16,6 +16,7 @@ First-person 3D American pool that runs in the browser. Nothing to install.
 - **vs Computer** (three difficulty levels), **two players on one device**, **online**, and **practice**
 - Side spin, follow, draw, jump and masse shots: both the tip position and the cue elevation affect the cue ball
 - In 9-ball, the next ball to hit is marked (toggle with N)
+- Slow-motion close-up when the 8 or 9 drops, plus six cloth colours and six cue styles in Settings → Look
 - Plays on phones: touch aiming and a power bar, fullscreen on Android (on iOS, use "Add to Home Screen")
 - English and Traditional Chinese UI. Switch in the top-right corner of the home screen, or add `?lang=en` / `?lang=zh` to the URL
 

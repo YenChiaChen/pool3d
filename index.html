@@ -284,6 +284,10 @@ h1{margin:0;font:700 44px/1.1 var(--sans);letter-spacing:-.01em}
 .sgrp{display:flex;flex-direction:column}.sgrp>.lbl{padding-bottom:6px}
 .srow2{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);width:100%}
 .srow2:last-child{border:0}
+.sws{display:flex;flex-wrap:wrap;gap:12px;padding-top:8px}
+.sws button{width:40px;height:40px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);transition:transform .15s}
+.sws button:hover{transform:scale(1.08)}.sws button.on{border-color:var(--ac);transform:scale(1.12)}
+#slowFx{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.65));z-index:2}
 .srow2 span{display:flex;flex-direction:column;gap:3px}.srow2 b{font-size:15px;font-weight:400}.srow2 small{font-size:13px;color:var(--mu)}
 .sw{width:44px;height:26px;border-radius:13px;background:var(--s3);position:relative;flex:none;transition:background .2s}
 .sw::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--mu);transition:transform .2s,background .2s}
@@ -362,7 +366,7 @@ body.touch .cSteps{display:none}
 @media (max-width:640px){
   .mbox{flex-direction:column;height:100%}
   .mnav{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--ln);padding:12px 70px 12px 12px;overflow-x:auto;align-items:center}
-  .mnav h3{padding:0 8px 0 4px}
+  .mnav h3{display:none}.mnav button{padding:9px 10px}
   .mbody{padding:20px}.mclose{top:12px;right:12px}
   .keys.two{grid-template-columns:auto 1fr}
   .mbox.help{padding:22px 20px}
@@ -385,6 +389,7 @@ body.touch .cSteps{display:none}
     <div id="tipBox"><div class="cueball"><i id="tipDot"></i></div><div class="tinfo"><div class="tv"><div><small>打點</small><b id="tipName">中心</b></div><div><small>仰角</small><b id="elevVal">3°</b></div></div><div class="tkeys d-only">←↑→↓ 打點 · Q/E 仰角 · C 歸零</div></div></div>
     <div id="power"><div class="plab"><span>力道</span><b id="powVal">0%</b></div><div class="ptrack"><span class="pmax"></span><div id="powFill"></div><i id="powLast"></i></div><div class="plab"><span></span><span id="lastLab"></span></div></div>
     <div id="hint"></div>
+    <div id="slowFx"></div>
     <div id="keyHints"><kbd class="alt">Alt</kbd><span class="alt">放開滑鼠</span><kbd>V</kbd><span>俯視</span><kbd>H</kbd><span>輔助線</span><kbd>P</kbd><span>重播上一桿</span><kbd>TAB</kbd><span>全部按鍵</span></div>
     <div id="tpow" class="t-only"><b id="tpowVal">0%</b><div class="tt"><div id="tpowFill"></div><div id="tpowKnob"></div></div><small>下拉<br>蓄力</small></div>
     <div id="tbar" class="t-only"><button id="moveBtn" class="hbtn">移動母球</button><button id="fineBtn" class="hbtn">微調瞄準</button></div>
@@ -473,7 +478,7 @@ body.touch .cSteps{display:none}
 </div></div>
 
 <div id="settings" class="modal"><div class="mbox">
-  <nav class="mnav" id="setNav"><h3>設定</h3><button data-st="game" class="on">遊戲</button><button data-st="ctrl">操作</button><button data-st="audio">音效</button><button data-st="keys" class="d-only">按鍵一覽</button></nav>
+  <nav class="mnav" id="setNav"><h3>設定</h3><button data-st="game" class="on">遊戲</button><button data-st="ctrl">操作</button><button data-st="look">外觀</button><button data-st="audio">音效</button><button data-st="keys" class="d-only">按鍵一覽</button></nav>
   <div class="mbody">
     <section data-st="game" class="on">
       <div class="sgrp"><div class="lbl">瞄準輔助</div>
@@ -483,14 +488,20 @@ body.touch .cSteps{display:none}
       </div>
       <div class="sgrp"><div class="lbl">擊球</div>
         <button class="srow2" data-set="resetTip"><span><b>每桿打完打點歸零</b><small>關閉則保留上一桿的打點與仰角</small></span><i class="sw"></i></button>
+        <button class="srow2" data-set="slowmo"><span><b>關鍵球慢動作</b><small>8 號、9 號球靠近袋口時放慢並拉近鏡頭</small></span><i class="sw"></i></button>
       </div>
     </section>
     <section data-st="ctrl">
       <div class="sgrp"><div class="lbl">瞄準靈敏度（滑鼠與觸控拖曳）</div><div class="rng"><input type="range" id="sens" min="0.3" max="2" step="0.05"><output id="sensV"></output></div></div>
       <div class="sgrp"><div class="lbl">新手教學</div><div style="display:flex;gap:12px;align-items:center;padding-top:6px"><button id="tutReset" class="ghost">下一局重看教學</button></div></div>
     </section>
+    <section data-st="look">
+      <div class="sgrp"><div class="lbl">球台布面</div><div class="sws" id="swCloth"></div></div>
+      <div class="sgrp"><div class="lbl">球桿</div><div class="sws" id="swCue"></div></div>
+    </section>
     <section data-st="audio">
       <div class="sgrp"><div class="lbl">音量</div><div class="rng"><input type="range" id="vol" min="0" max="1" step="0.05"><output id="volV"></output></div></div>
+      <div class="sgrp"><button class="srow2" data-set="amb"><span><b>環境音</b><small>撞球間的低沉空間聲</small></span><i class="sw"></i></button></div>
     </section>
     <section data-st="keys"><div class="keys" id="keysA"></div></section>
   </div>
@@ -534,7 +545,7 @@ const DICT = {
   '目標球與母球走向': 'Object and cue ball paths', '撞擊後兩顆球的預測方向': 'Predicted directions of both balls after contact',
   '9 號球目標提示': '9-ball target marker', '在下一顆該打的球上顯示號碼 · N': 'Show the number above the next ball to hit · N', '擊球': 'Shooting',
   '每桿打完打點歸零': 'Reset spin after each shot', '關閉則保留上一桿的打點與仰角': "When off, the last shot's spin and elevation are kept",
-  '瞄準靈敏度（滑鼠與觸控拖曳）': 'Aim sensitivity (mouse and touch)', '新手教學': 'Tutorial', '下一局重看教學': 'Show tutorial next game', '音量': 'Volume', '送出': 'Send',
+  '瞄準靈敏度（滑鼠與觸控拖曳）': 'Aim sensitivity (mouse and touch)', '新手教學': 'Tutorial', '下一局重看教學': 'Show tutorial next game', '音量': 'Volume', '外觀': 'Look', '球台布面': 'Cloth', '球桿': 'Cue', '關鍵球慢動作': 'Slow motion on key balls', '8 號、9 號球靠近袋口時放慢並拉近鏡頭': 'Slows down and zooms in when the 8 or 9 nears a pocket', '環境音': 'Room ambience', '撞球間的低沉空間聲': 'A low pool-hall room tone', '送出': 'Send',
 };
 if (EN) {
   document.documentElement.lang = 'en'; document.title = DICT[document.title] || document.title;
@@ -786,14 +797,21 @@ const sfx = {
     if (ac.state !== 'running') return; const a = Math.min(1, v / 6);
     sound(REC.cue || pick(CUE), 0.35 + 0.55 * a, 2500 + 9000 * a);
   },
-  pocket(x, z) { // 碰袋口 → 落袋底「咚」→ 和袋裡的球輕碰幾下
-    if (ac.state !== 'running') return; const t = ac.currentTime;
-    if (REC.pot) return sound(REC.pot, 0.9, 20000, x, z);
-    sound(pick(S_RAIL), 0.35, 1500, x, z, t, 1.4);
-    sound(THUD, 0.8, 900, x, z, t + 0.05);
+  pocket(x, z, v = 1) { // 碰袋口 → 落袋底「咚」→ 和袋裡的球輕碰幾下；球越快越響越亮
+    if (ac.state !== 'running') return; const t = ac.currentTime, a = Math.min(1, 0.35 + v / 2.5);
+    if (REC.pot) return sound(REC.pot, 0.9 * a, 4000 + 16000 * a, x, z, t, 1.06 - 0.1 * a);
+    sound(pick(S_RAIL), 0.35 * a, 1500, x, z, t, 1.4);
+    sound(THUD, 0.8 * a, 900, x, z, t + 0.05);
     for (const [d, v] of [[0.22, 0.22], [0.33, 0.12], [0.41, 0.07]]) sound(pick(BALL), v, 1800, x, z, t + d, 0.85);
   },
 };
+// 滾動聲與環境音：同一段迴圈噪音，分兩路濾波。滾動聲音量跟著桌上所有球的速度走
+const noiseBuf = buf(2, 1, () => Math.random() * 2 - 1);
+function noiseLoop(type, freq, q) { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf; s.loop = true;
+  f.type = type; f.frequency.value = freq; f.Q.value = q; g.gain.value = 0; s.connect(f).connect(g).connect(master); s.start(); return g; }
+const rollGain = noiseLoop('lowpass', 260, 0.7), ambGain = noiseLoop('lowpass', 140, 0.5), AMB = 0.035;
+function rollSound(dt) { let v = 0; for (const b of balls) if (b.active && !b.y) v += Math.hypot(b.vx, b.vz);
+  rollGain.gain.value += (Math.min(0.22, v * 0.07) - rollGain.gain.value) * Math.min(1, dt * 12); }
 // 真實錄音：從 jsDelivr 抓 tailuge/billiards 的音檔（GPL-3.0，固定版本）。載入失敗就繼續用上面的合成音
 const REC = {}, SND = 'https://cdn.jsdelivr.net/gh/tailuge/billiards@8aeb1dee14e7dccf71b47cdf6f68fc33e5f6459b/dist/sounds/';
 for (const n of ['ballcollision', 'cushion', 'cue', 'pot'])
@@ -886,8 +904,9 @@ function step(dt) {
     }
     if (b.y > 0.02) continue; // 在空中不會掉袋
     for (const p of pockets) if (Math.hypot(b.x - p.x, b.z - p.z) < p.r || Math.abs(b.x) > L + 0.12 || Math.abs(b.z) > W + 0.12) {
+      const sp = Math.hypot(b.vx, b.vz);
       b.active = false; b.fall = { x: p.x, z: p.z, t: 0 }; b.vx = b.vz = b.vy = b.y = 0;
-      sfx.pocket(p.x, p.z);
+      sfx.pocket(p.x, p.z, sp);
       potToast(b === cueBall ? 0 : b.n);
       if (shot) b === cueBall ? (shot.scratch = true) : shot.potted.push(b.n);
       break;
@@ -1079,11 +1098,11 @@ document.addEventListener('pointerlockchange', () => {
 });
 
 // 設定記在這台瀏覽器
-const settings = { vol: 0.8, sens: 1, mark: true, aim: true, predict: true, resetTip: true, tutDone: false };
+const settings = { vol: 0.8, sens: 1, mark: true, aim: true, predict: true, resetTip: true, tutDone: false, slowmo: true, amb: true, cloth: 0, cueSkin: 0 };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('pool-settings') || '{}')); } catch {}
 const saveSettings = () => { try { localStorage.setItem('pool-settings', JSON.stringify(settings)); } catch {} };
 const saveCfg = () => { try { localStorage.setItem('pool-cfg', JSON.stringify(cfg)); } catch {} };
-master.gain.value = settings.vol; helpers = settings.aim;
+master.gain.value = settings.vol; helpers = settings.aim; ambGain.gain.value = settings.amb ? AMB : 0;
 
 let menuOpen = true, started = false, screen = 'home', dlg = null, passiveHelp = false;
 let touchPow = false, moveMode = false, fine = false, aimMoved = 0;
@@ -1200,7 +1219,7 @@ $('foul').addEventListener('click', () => { foulT = 0; });
 // ---- 設定 ----
 function refreshToggles() { document.querySelectorAll('[data-set]').forEach(el => el.classList.toggle('on', !!settings[el.dataset.set])); }
 document.querySelectorAll('[data-set]').forEach(el => el.addEventListener('click', () => {
-  const k = el.dataset.set; settings[k] = !settings[k]; if (k === 'aim') helpers = settings.aim; saveSettings(); refreshToggles();
+  const k = el.dataset.set; settings[k] = !settings[k]; if (k === 'aim') helpers = settings.aim; saveSettings(); refreshToggles(); if (k === 'amb') ambGain.gain.value = settings.amb ? AMB : 0;
 }));
 for (const [id, apply, fmt] of [['vol', v => (master.gain.value = v), v => Math.round(v * 100) + '%'], ['sens', () => {}, v => (+v).toFixed(2) + '×']]) {
   const el = $(id), out = $(id + 'V'); el.value = settings[id]; out.textContent = fmt(settings[id]);
@@ -1434,12 +1453,27 @@ const cue = new THREE.Group(); scene.add(cue);
 function cuePart(rt, rb, len, color, z0) {
   const g = new THREE.CylinderGeometry(rt, rb, len, 24); g.rotateX(Math.PI / 2);
   const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 0.3 }));
-  m.position.z = z0 - len / 2; m.castShadow = true; cue.add(m);
+  m.position.z = z0 - len / 2; m.castShadow = true; cue.add(m); return m.material;
 }
 cuePart(0.0062, 0.0062, 0.01, 0x2f6fb8, 0);
 cuePart(0.0064, 0.0064, 0.02, 0xf3efe6, -0.01);
-cuePart(0.0065, 0.011, 1.0, 0xd9b77e, -0.03);
-cuePart(0.011, 0.0145, 0.42, 0x2a0e04, -1.03);
+const shaftMat = cuePart(0.0065, 0.011, 1.0, 0xd9b77e, -0.03), buttMat = cuePart(0.011, 0.0145, 0.42, 0x2a0e04, -1.03);
+// ---- 外觀：布面與球桿配色（設定 → 外觀，存在本機）----
+const CLOTHS = [[T('經典綠', 'Classic green'), 0x0f5a33, 0x2a8a58], [T('比賽藍', 'Tournament blue'), 0x1a4c86, 0x4a86c8], [T('酒紅', 'Burgundy'), 0x6a1622, 0xa8485a],
+  [T('石墨灰', 'Graphite'), 0x3a3f45, 0x737b84], [T('皇家紫', 'Royal purple'), 0x40266e, 0x7f5cb8], [T('沙漠棕', 'Desert tan'), 0x8a6a3a, 0xc4a070]];
+const CUES = [[T('楓木', 'Maple'), 0xd9b77e, 0x2a0e04], [T('黑檀', 'Ebony'), 0xcfa76a, 0x111214], [T('象牙白', 'Ivory'), 0xe6dcc6, 0xeee8dc],
+  [T('烈焰紅', 'Flame red'), 0xd9b77e, 0x9a1a1a], [T('深海藍', 'Deep blue'), 0xd9b77e, 0x1d3f8a], [T('香檳金', 'Champagne'), 0xe0c890, 0xb8892a]];
+const hex = c => '#' + c.toString(16).padStart(6, '0');
+function applyLook() {
+  const c = CLOTHS[settings.cloth] || CLOTHS[0], q = CUES[settings.cueSkin] || CUES[0];
+  clothMat.color.setHex(c[1]); clothMat.sheenColor.setHex(c[2]); shaftMat.color.setHex(q[1]); buttMat.color.setHex(q[2]);
+  document.querySelectorAll('#swCloth button').forEach((b, i) => b.classList.toggle('on', i === settings.cloth));
+  document.querySelectorAll('#swCue button').forEach((b, i) => b.classList.toggle('on', i === settings.cueSkin));
+}
+for (const [id, list, key, bg] of [['swCloth', CLOTHS, 'cloth', c => hex(c[1])], ['swCue', CUES, 'cueSkin', c => `linear-gradient(135deg,${hex(c[1])} 50%,${hex(c[2])} 50%)`]])
+  list.forEach((c, i) => { const b = document.createElement('button'); b.title = c[0]; b.setAttribute('aria-label', c[0]); b.style.background = bg(c);
+    b.onclick = () => { settings[key] = i; saveSettings(); applyLook(); }; $(id).append(b); });
+applyLook();
 
 // ---- HUD ----
 const $t = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };
@@ -1809,15 +1843,31 @@ function updateNetUi() {
 
 // ---- 主迴圈 ----
 const clock = new THREE.Clock(), camTarget = new THREE.Vector3(), camPos = new THREE.Vector3(), camDir = new THREE.Vector3(1, 0, 0), follow = new THREE.Vector3(), q = new THREE.Quaternion(), axis = new THREE.Vector3();
-let acc = 0;
+let acc = 0, slow = 1, slowHold = 0, slowNear = false; const slowAt = { x: 0, z: 0 };
+// 關鍵球（8 號球局的 8、9 號球局的 9）朝袋口滾、離袋口很近時放慢時間並拉近鏡頭；進袋後再慢一下才恢復
+// ponytail: 只改每幀推進的模擬時間，1ms 物理步進不變，所以結果和不慢動作完全一樣（線上兩邊不會不同步）
+function slowTarget(dt) {
+  const r = rules(), kb = settings.slowmo && state === 'moving' && r !== 'practice' ? balls[r] : null;
+  if (!kb) { slowHold = 0; return 1; }
+  if (!kb.active) { // 剛進袋：在袋口多慢 0.9 秒
+    if (slowNear && kb.fall) { slowHold = 0.9; slowAt.x = kb.fall.x; slowAt.z = kb.fall.z; } slowNear = false;
+    return (slowHold -= dt) > 0 ? 0.3 : 1;
+  }
+  const v = Math.hypot(kb.vx, kb.vz);
+  slowNear = v > 0.03 && pockets.some(p => { const dx = p.x - kb.x, dz = p.z - kb.z, d = Math.hypot(dx, dz); return d < 0.22 && (kb.vx * dx + kb.vz * dz) / (v * d) > 0.5; });
+  if (slowNear) { slowAt.x = kb.x; slowAt.z = kb.z; }
+  return slowNear ? 0.25 : 1;
+}
 camera.position.set(-L - 0.8, 0.6, 0);
 function frame(_, fixedDt) {
   const dt = fixedDt ?? Math.min(clock.getDelta(), 0.05);
   sfxBudget = 0;
   updateNetUi();
   if (menuOpen && !fixedDt && !net) { homeOrbit(); updateHud(); renderer.render(scene, camera); return; } // 選單開著 = 暫停
+  slow += (slowTarget(dt) - slow) * Math.min(1, dt * 10); $('slowFx').style.opacity = ((1 - slow) / 0.75).toFixed(2);
+  rollSound(dt);
   if (state === 'moving') {
-    acc += dt; simT += dt;
+    acc += dt * slow; simT += dt * slow;
     while (acc >= STEP) { step(STEP); acc -= STEP; }
     if (balls.every(b => !b.active || (!b.vx && !b.vz && !b.wx && !b.wz && !b.vy && !b.y))) { endShot(); if (net && shotBy === net.me) sendSync(); }
   }
@@ -1864,7 +1914,7 @@ function frame(_, fixedDt) {
   } else for (const b of balls) {
     const m = b.mesh;
     if (b.fall) {
-      const f = b.fall; f.t += dt;
+      const f = b.fall; f.t += dt * slow;
       m.position.x += (f.x - m.position.x) * Math.min(1, dt * 12);
       m.position.z += (f.z - m.position.z) * Math.min(1, dt * 12);
       m.position.y = R - 4 * f.t * f.t;
@@ -1908,8 +1958,9 @@ function frame(_, fixedDt) {
     if (sw > 0) follow.set(Math.max(-L, Math.min(L, sx / sw)), 0, Math.max(-W, Math.min(W, sz / sw)));
     camTarget.copy(follow);
     camPos.set(follow.x - camDir.x * 1.15, 1.0, follow.z - camDir.z * 1.15);
+    if (slow < 0.9) { camTarget.set(slowAt.x, 0, slowAt.z); camPos.set(slowAt.x - camDir.x * 0.45, 0.32, slowAt.z - camDir.z * 0.45); } // 慢動作特寫：鏡頭拉近關鍵球
   }
-  const k = 1 - Math.exp(-dt * (state === 'moving' ? 2 : 10));
+  const k = 1 - Math.exp(-dt * (state === 'moving' ? (slow < 0.9 ? 4 : 2) : 10));
   camera.position.lerp(camPos, k);
   camera.userData.t = (camera.userData.t || camTarget.clone()).lerp(camTarget, k);
   camera.lookAt(camera.userData.t);
@@ -1925,7 +1976,7 @@ function frame(_, fixedDt) {
 renderer.setAnimationLoop(frame);
 resetMatch(cfg.race); mode = modeFromCfg(); newGame(); hideMsg(); refreshToggles();
 { const q = new URLSearchParams(location.search).get('room'); if (q) { onTab = 'join'; cfg.opp = 'online'; joinRoom(q); showScreen('online'); } else showScreen('home'); }
-window.pool = { get net() { return net; }, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), get yaw() { return yaw; }, setPitch: v => (pitch = v), setTop: v => (topView = v), setDemo: v => (demo = v), charge: v => { power = v; charging = touchPow = v > 0; }, fire: () => { charging = touchPow = false; fire(); }, setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
+window.pool = { get net() { return net; }, get slow() { return slow; }, hide, place, pockets, ac, sfx, camera, balls, step, launch, shoot, tip, setElev: v => (elev = v), game, planFrom, tick: n => { for (let i = 0; i < n; i++) frame(0, 1 / 60); }, setYaw: v => (yaw = v), get yaw() { return yaw; }, setPitch: v => (pitch = v), setTop: v => (topView = v), setDemo: v => (demo = v), charge: v => { power = v; charging = touchPow = v > 0; }, fire: () => { charging = touchPow = false; fire(); }, setMode: m => { mode = m; newGame(); }, get state() { return state; }, get rec() { return rec; }, replay: () => { replay = { t: 0, i: 0, prev: state }; state = 'replay'; } }; // 除錯用
 </script>
 </body>
 </html>
